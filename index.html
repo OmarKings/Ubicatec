@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Control de LED (ESP32 + HiveMQ Cloud)</title>
+
+  <!-- ====== LIBRERÍA MQTT ====== -->
+  <!-- Esta línea importa la librería MQTT para navegador -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+  <!-- ====== ESTILOS (CSS) ====== -->
+  <style>
+    body {
+      background-color: #eef2ff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 80px;
+    }
+
+    h1 {
+      color: #0038a8;
+      margin-bottom: 30px;
+    }
+
+    button {
+      font-size: 20px;
+      padding: 15px 40px;
+      margin: 10px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    #on {
+      background-color: #4CAF50;
+    }
+
+    #off {
+      background-color: #f44336;
+    }
+
+    #on:hover {
+      background-color: #3e8e41;
+    }
+
+    #off:hover {
+      background-color: #d32f2f;
+    }
+
+    #status {
+      margin-top: 30px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    #indicator {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      margin: 10px auto;
+      background-color: gray;
+      border: 2px solid #444;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ====== TÍTULO ====== -->
+  <h1>💡 Control Remoto del LED (ESP32 + HiveMQ Cloud)</h1>
+
+  <!-- ====== BOTONES ====== -->
+  <button id="on">Encender LED</button>
+  <button id="off">Apagar LED</button>
+
+  <!-- ====== INDICADOR Y ESTADO ====== -->
+  <div id="indicator"></div>
+  <p id="status">Conectando...</p>
+
+  <!-- ====== CÓDIGO JAVASCRIPT ====== -->
+  <script>
+    // ================================================
+    // CONFIGURACIÓN DEL BROKER HIVE MQ CLOUD
+    // ================================================
+    const broker = 'wss://958d6cbfe5ce4f0581776ff12f2049b4.s1.eu.hivemq.cloud:8884/mqtt';
+    const options = {
+      username: "Omarkings",     // usuario creado en HiveMQ Cloud
+      password: "567129Aa",     // contraseña creada en HiveMQ Cloud
+      connectTimeout: 4000,     // 4 segundos para intentar conexión
+      reconnectPeriod: 3000     // reconexión cada 3s si falla
+    };
+
+    // Conexión al broker MQTT
+    const client = mqtt.connect(broker, options);
+
+    // Temas (topics)
+    const topicControl = "omar/led/control";
+    const topicStatus = "omar/led/status";
+
+    // ================================================
+    // EVENTOS DE CONEXIÓN
+    // ================================================
+    client.on('connect', () => {
+      console.log("✅ Conectado a HiveMQ Cloud");
+      document.getElementById('status').innerText = "Conectado ✅";
+      client.subscribe(topicStatus);
+    });
+
+    // ================================================
+    // EVENTO DE ERROR
+    // ================================================
+    client.on('error', (error) => {
+      console.error("❌ Error de conexión:", error);
+      document.getElementById('status').innerHTML =
+        "Error de conexión ❌<br>" + (error.message || "Verifica usuario y contraseña");
+    });
+
+    // ================================================
+    // EVENTOS DE MENSAJE (RECIBIR ESTADO DEL LED)
+    // ================================================
+    client.on('message', (topic, message) => {
+      if (topic === topicStatus) {
+        const text = message.toString();
+        document.getElementById('status').innerText = "Estado: " + text;
+
+        // Cambia color del círculo de estado
+        if (text.includes("encendido")) {
+          document.getElementById('indicator').style.backgroundColor = "green";
+        } else if (text.includes("apagado")) {
+          document.getElementById('indicator').style.backgroundColor = "red";
+        } else {
+          document.getElementById('indicator').style.backgroundColor = "gray";
+        }
+      }
+    });
+
+    // ================================================
+    // BOTONES PARA PUBLICAR MENSAJES
+    // ================================================
+    document.getElementById('on').onclick = () => {
+      client.publish(topicControl, "ON");
+      document.getElementById('status').innerText = "Comando enviado: ENCENDER";
+    };
+
+    document.getElementById('off').onclick = () => {
+      client.publish(topicControl, "OFF");
+      document.getElementById('status').innerText = "Comando enviado: APAGAR";
+    };
+  </script>
+</body>
+</html>
