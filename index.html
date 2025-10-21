@@ -2,30 +2,31 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Control de LED (ESP32 + HiveMQ Cloud)</title>
-
-  <!-- ====== LIBRERÍA MQTT ====== -->
-  <!-- Esta línea importa la librería MQTT para navegador -->
+  <title>Control LED y Motores (ESP32 + HiveMQ Cloud)</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
-  <!-- ====== ESTILOS (CSS) ====== -->
   <style>
     body {
       background-color: #eef2ff;
       font-family: Arial, sans-serif;
       text-align: center;
-      margin-top: 80px;
+      margin-top: 60px;
     }
 
     h1 {
       color: #0038a8;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      color: #2b2b2b;
+      margin-top: 40px;
     }
 
     button {
-      font-size: 20px;
-      padding: 15px 40px;
-      margin: 10px;
+      font-size: 18px;
+      padding: 12px 30px;
+      margin: 8px;
       border: none;
       border-radius: 10px;
       cursor: pointer;
@@ -33,20 +34,26 @@
       transition: all 0.3s ease;
     }
 
-    #on {
-      background-color: #4CAF50;
+    #on { background-color: #4CAF50; }
+    #off { background-color: #f44336; }
+
+    #on:hover { background-color: #3e8e41; }
+    #off:hover { background-color: #d32f2f; }
+
+    .motor-btn {
+      background-color: #1976D2;
     }
 
-    #off {
-      background-color: #f44336;
+    .motor-btn:hover {
+      background-color: #0D47A1;
     }
 
-    #on:hover {
-      background-color: #3e8e41;
+    #stop {
+      background-color: #FF9800;
     }
 
-    #off:hover {
-      background-color: #d32f2f;
+    #stop:hover {
+      background-color: #F57C00;
     }
 
     #status {
@@ -64,38 +71,64 @@
       background-color: gray;
       border: 2px solid #444;
     }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, auto);
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .grid button {
+      width: 120px;
+    }
   </style>
 </head>
 
 <body>
-  <!-- ====== TÍTULO ====== -->
-  <h1>💡 Control Remoto del LED (ESP32 + HiveMQ Cloud)</h1>
+  <h1>🚗 Control ESP32 (LED + Motores)</h1>
 
-  <!-- ====== BOTONES ====== -->
+  <!-- ====== LED ====== -->
+  <h2>💡 Control del LED</h2>
   <button id="on">Encender LED</button>
   <button id="off">Apagar LED</button>
 
-  <!-- ====== INDICADOR Y ESTADO ====== -->
+  <!-- ====== MOTORES ====== -->
+  <h2>⚙️ Control de Motores</h2>
+  <div class="grid">
+    <div></div>
+    <button id="avanzar" class="motor-btn">⬆️ Avanzar</button>
+    <div></div>
+
+    <button id="izquierda" class="motor-btn">⬅️ Izquierda</button>
+    <button id="stop" class="motor-btn">⏹️ Stop</button>
+    <button id="derecha" class="motor-btn">➡️ Derecha</button>
+
+    <div></div>
+    <button id="retroceder" class="motor-btn">⬇️ Retroceder</button>
+    <div></div>
+  </div>
+
+  <!-- ====== ESTADO ====== -->
   <div id="indicator"></div>
   <p id="status">Conectando...</p>
 
-  <!-- ====== CÓDIGO JAVASCRIPT ====== -->
+  <!-- ====== SCRIPT MQTT ====== -->
   <script>
     // ================================================
     // CONFIGURACIÓN DEL BROKER HIVE MQ CLOUD
     // ================================================
     const broker = 'wss://958d6cbfe5ce4f0581776ff12f2049b4.s1.eu.hivemq.cloud:8884/mqtt';
     const options = {
-      username: "Omarkings",     // usuario creado en HiveMQ Cloud
-      password: "567129Aa",     // contraseña creada en HiveMQ Cloud
-      connectTimeout: 4000,     // 4 segundos para intentar conexión
-      reconnectPeriod: 3000     // reconexión cada 3s si falla
+      username: "Omarkings",
+      password: "567129Aa",
+      connectTimeout: 4000,
+      reconnectPeriod: 3000
     };
 
-    // Conexión al broker MQTT
     const client = mqtt.connect(broker, options);
-
-    // Temas (topics)
     const topicControl = "omar/led/control";
     const topicStatus = "omar/led/status";
 
@@ -108,9 +141,6 @@
       client.subscribe(topicStatus);
     });
 
-    // ================================================
-    // EVENTO DE ERROR
-    // ================================================
     client.on('error', (error) => {
       console.error("❌ Error de conexión:", error);
       document.getElementById('status').innerHTML =
@@ -118,14 +148,13 @@
     });
 
     // ================================================
-    // EVENTOS DE MENSAJE (RECIBIR ESTADO DEL LED)
+    // EVENTO DE MENSAJE (ESTADO)
     // ================================================
     client.on('message', (topic, message) => {
       if (topic === topicStatus) {
         const text = message.toString();
         document.getElementById('status').innerText = "Estado: " + text;
 
-        // Cambia color del círculo de estado
         if (text.includes("encendido")) {
           document.getElementById('indicator').style.backgroundColor = "green";
         } else if (text.includes("apagado")) {
@@ -137,17 +166,24 @@
     });
 
     // ================================================
-    // BOTONES PARA PUBLICAR MENSAJES
+    // FUNCIONES PARA PUBLICAR COMANDOS MQTT
     // ================================================
-    document.getElementById('on').onclick = () => {
-      client.publish(topicControl, "ON");
-      document.getElementById('status').innerText = "Comando enviado: ENCENDER";
-    };
+    function enviarComando(cmd) {
+      client.publish(topicControl, cmd);
+      document.getElementById('status').innerText = "Comando enviado: " + cmd;
+      console.log("📤 Enviado:", cmd);
+    }
 
-    document.getElementById('off').onclick = () => {
-      client.publish(topicControl, "OFF");
-      document.getElementById('status').innerText = "Comando enviado: APAGAR";
-    };
+    // LED
+    document.getElementById('on').onclick = () => enviarComando("ON");
+    document.getElementById('off').onclick = () => enviarComando("OFF");
+
+    // MOTORES
+    document.getElementById('avanzar').onclick = () => enviarComando("AVANZAR");
+    document.getElementById('retroceder').onclick = () => enviarComando("RETROCEDER");
+    document.getElementById('izquierda').onclick = () => enviarComando("IZQUIERDA");
+    document.getElementById('derecha').onclick = () => enviarComando("DERECHA");
+    document.getElementById('stop').onclick = () => enviarComando("STOP");
   </script>
 </body>
 </html>
