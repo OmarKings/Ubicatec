@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "C:/Users/OmarKings/Desktop/lidar/libfreenect-0.6.4"
+  "python.defaultInterpreterPath": "C:\\Users\\OmarKings\\Desktop\\lidar\\libfreenect-0.6.4\\build\\bin\\Release\\kinect_env_gpu\\Scripts\\python.exe",
+  "python.terminal.activateEnvironment": true
 }
