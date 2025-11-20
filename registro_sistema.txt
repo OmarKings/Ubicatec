@@ -1,0 +1,5 @@
+[Señas] Palabra confirmada: ORJFRBFABSC
+[Señas] Palabra confirmada: BCQROAR
+[Texto a Voz] hola
+[Señas] Palabra confirmada (final): ORJFRBFABSC
+[Señas] Palabra confirmada (final): BCQROAR

@@ -1,0 +1,48 @@
+# ===========================
+# IGNORAR ENTORNOS VIRTUALES
+# ===========================
+venv/
+venv_311/
+*/venv/
+*/venv_311/
+*/.venv/
+
+# ===========================
+# IGNORAR MODELOS PESADOS
+# ===========================
+*.pth
+*.p
+*.onnx
+
+# ===========================
+# IGNORAR LIBRERÍAS COMPILADAS
+# ===========================
+*.dll
+*.pyd
+
+# ===========================
+# ARCHIVOS DE CACHE DE PYTHON
+# ===========================
+__pycache__/
+*.pyc
+
+# ===========================
+# SALIDA DE KINECT Y BASES DE DATOS
+# ===========================
+dataset/
+frames/
+depth/
+output/
+captures/
+
+# ===========================
+# ARCHIVOS GENERADOS POR WINDOWS
+# ===========================
+Thumbs.db
+*.log
+
+# ===========================
+# IGNORAR PESOS Y MODELOS
+# ===========================
+weights/
+models/

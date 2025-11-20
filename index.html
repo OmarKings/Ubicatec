@@ -2,124 +2,521 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Control LED y Motores (ESP32 + HiveMQ Cloud)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🤖 Robot Asistente TEC - Control Web</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-
+  
   <style>
-    body {
-      background-color: #eef2ff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 60px;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    h1 {
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .header h1 {
       color: #0038a8;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .header .subtitle {
+      color: #666;
+      font-size: 1.1em;
+    }
+
+    .status-card {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .status-card h2 {
+      color: #0038a8;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
       margin-bottom: 20px;
     }
 
-    h2 {
-      color: #2b2b2b;
-      margin-top: 40px;
+    .status-item {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 15px;
+      border-left: 5px solid #667eea;
     }
 
-    button {
-      font-size: 18px;
-      padding: 12px 30px;
-      margin: 8px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      color: white;
-      transition: all 0.3s ease;
+    .status-item .label {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 5px;
     }
 
-    #on { background-color: #4CAF50; }
-    #off { background-color: #f44336; }
-
-    #on:hover { background-color: #3e8e41; }
-    #off:hover { background-color: #d32f2f; }
-
-    .motor-btn {
-      background-color: #1976D2;
-    }
-
-    .motor-btn:hover {
-      background-color: #0D47A1;
-    }
-
-    #stop {
-      background-color: #FF9800;
-    }
-
-    #stop:hover {
-      background-color: #F57C00;
-    }
-
-    #status {
-      margin-top: 30px;
-      font-size: 18px;
-      font-weight: bold;
+    .status-item .value {
       color: #333;
+      font-size: 1.3em;
+      font-weight: bold;
     }
 
-    #indicator {
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      margin: 10px auto;
-      background-color: gray;
-      border: 2px solid #444;
+    .status-badge {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 1.1em;
     }
 
-    .grid {
+    .status-badge.disponible {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .status-badge.ocupado {
+      background: #FF9800;
+      color: white;
+    }
+
+    .status-badge.navegando {
+      background: #2196F3;
+      color: white;
+    }
+
+    .status-badge.desconectado {
+      background: #f44336;
+      color: white;
+    }
+
+    .map-container {
+      background: #e8eaf6;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 20px;
+      min-height: 200px;
+      position: relative;
+    }
+
+    .map-container h3 {
+      color: #0038a8;
+      margin-bottom: 15px;
+    }
+
+    .location-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .location-icon {
+      font-size: 2em;
+    }
+
+    .control-section {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .control-section h2 {
+      color: #0038a8;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+    }
+
+    .destination-buttons {
       display: grid;
-      grid-template-columns: repeat(3, auto);
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .destination-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 20px;
+      border-radius: 15px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .destination-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .destination-btn:active {
+      transform: translateY(0);
+    }
+
+    .destination-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .call-robot-section {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .call-robot-section h2 {
+      color: white;
+      margin-bottom: 15px;
+      font-size: 2em;
+    }
+
+    .call-robot-section p {
+      color: white;
+      margin-bottom: 20px;
+      font-size: 1.1em;
+    }
+
+    .call-robot-btn {
+      background: white;
+      color: #f5576c;
+      border: none;
+      padding: 20px 40px;
+      border-radius: 50px;
+      font-size: 1.3em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .call-robot-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+
+    .call-robot-btn:disabled {
+      background: #ccc;
+      color: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .motor-control {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
       gap: 10px;
       justify-content: center;
-      align-items: center;
       margin-top: 20px;
     }
 
-    .grid button {
-      width: 120px;
+    .motor-btn {
+      background: #1976D2;
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 1.2em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .motor-btn:hover {
+      background: #0D47A1;
+      transform: scale(1.05);
+    }
+
+    .motor-btn:active {
+      transform: scale(0.95);
+    }
+
+    .motor-btn.stop {
+      background: #FF9800;
+    }
+
+    .motor-btn.stop:hover {
+      background: #F57C00;
+    }
+
+    .connection-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 15px 25px;
+      border-radius: 50px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+    }
+
+    .connection-dot {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: gray;
+      animation: pulse 2s infinite;
+    }
+
+    .connection-dot.connected {
+      background: #4CAF50;
+    }
+
+    .connection-dot.disconnected {
+      background: #f44336;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .log-section {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .log-section h2 {
+      color: #0038a8;
+      margin-bottom: 15px;
+    }
+
+    .log-container {
+      background: #1e1e1e;
+      color: #00ff00;
+      padding: 20px;
+      border-radius: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+
+    .log-entry {
+      margin-bottom: 5px;
+      padding: 5px;
+      border-left: 3px solid #00ff00;
+      padding-left: 10px;
+    }
+
+    .log-entry.error {
+      border-left-color: #ff0000;
+      color: #ff6b6b;
+    }
+
+    .log-entry.warning {
+      border-left-color: #ffaa00;
+      color: #ffd93d;
+    }
+
+    .emergency-stop {
+      background: #f44336;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-size: 1.2em;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    .emergency-stop:hover {
+      background: #d32f2f;
+      transform: scale(1.02);
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8em;
+      }
+      
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .destination-buttons {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 
 <body>
-  <h1>🚗 Control ESP32 (LED + Motores)</h1>
-
-  <!-- ====== LED ====== -->
-  <h2>💡 Control del LED</h2>
-  <button id="on">Encender LED</button>
-  <button id="off">Apagar LED</button>
-
-  <!-- ====== MOTORES ====== -->
-  <h2>⚙️ Control de Motores</h2>
-  <div class="grid">
-    <div></div>
-    <button id="avanzar" class="motor-btn">⬆️ Avanzar</button>
-    <div></div>
-
-    <button id="izquierda" class="motor-btn">⬅️ Izquierda</button>
-    <button id="stop" class="motor-btn">⏹️ Stop</button>
-    <button id="derecha" class="motor-btn">➡️ Derecha</button>
-
-    <div></div>
-    <button id="retroceder" class="motor-btn">⬇️ Retroceder</button>
-    <div></div>
+  <div class="connection-indicator">
+    <div class="connection-dot" id="connectionDot"></div>
+    <span id="connectionText">Conectando...</span>
   </div>
 
-  <!-- ====== ESTADO ====== -->
-  <div id="indicator"></div>
-  <p id="status">Conectando...</p>
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <h1>🤖 Robot Asistente TEC</h1>
+      <p class="subtitle">Sistema de Navegación y Control Inteligente</p>
+    </div>
 
-  <!-- ====== SCRIPT MQTT ====== -->
+    <!-- ESTADO DEL ROBOT -->
+    <div class="status-card">
+      <h2>📊 Estado del Robot</h2>
+      
+      <div style="text-align: center; margin-bottom: 20px;">
+        <span class="status-badge" id="robotStatus">Desconectado</span>
+      </div>
+
+      <div class="status-grid">
+        <div class="status-item">
+          <div class="label">📍 Ubicación Actual</div>
+          <div class="value" id="currentLocation">Desconocida</div>
+        </div>
+        
+        <div class="status-item">
+          <div class="label">🎯 Destino</div>
+          <div class="value" id="destination">Ninguno</div>
+        </div>
+        
+        <div class="status-item">
+          <div class="label">📏 Distancia</div>
+          <div class="value" id="distance">-- m</div>
+        </div>
+        
+        <div class="status-item">
+          <div class="label">🔋 Batería</div>
+          <div class="value" id="battery">---%</div>
+        </div>
+      </div>
+
+      <div class="map-container">
+        <h3>🗺️ Mapa del Campus</h3>
+        <div class="location-info">
+          <span class="location-icon">📍</span>
+          <div>
+            <strong>Coordenadas GPS:</strong><br>
+            <span id="gpsCoords">Esperando GPS...</span>
+          </div>
+        </div>
+        <div class="location-info">
+          <span class="location-icon">🧭</span>
+          <div>
+            <strong>Dirección:</strong><br>
+            <span id="direction">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LLAMAR AL ROBOT -->
+    <div class="call-robot-section">
+      <h2>📞 Llamar al Robot</h2>
+      <p>El robot vendrá a tu ubicación si está disponible y dentro de la zona segura</p>
+      <button class="call-robot-btn" id="callRobotBtn" onclick="callRobot()">
+        🚀 Llamar Robot a Mi Ubicación
+      </button>
+      <p style="margin-top: 15px; font-size: 0.9em;" id="callStatus"></p>
+    </div>
+
+    <!-- DESTINOS -->
+    <div class="control-section">
+      <h2>🎯 Enviar Robot a Destino</h2>
+      <p style="color: #666; margin-bottom: 20px;">Selecciona un destino para que el robot te guíe</p>
+      
+      <div class="destination-buttons">
+        <button class="destination-btn" onclick="sendToDestination('timhortons')">
+          ☕ Tim Hortons
+        </button>
+        <button class="destination-btn" onclick="sendToDestination('biblioteca')">
+          📚 Biblioteca
+        </button>
+        <button class="destination-btn" onclick="sendToDestination('cafeteria')" disabled>
+          🍽️ Cafetería<br><small>(Próximamente)</small>
+        </button>
+        <button class="destination-btn" onclick="sendToDestination('aulas')" disabled>
+          🏫 Aulas<br><small>(Próximamente)</small>
+        </button>
+      </div>
+
+      <button class="emergency-stop" onclick="emergencyStop()">
+        🛑 DETENER ROBOT (EMERGENCIA)
+      </button>
+    </div>
+
+    <!-- CONTROL MANUAL -->
+    <div class="control-section">
+      <h2>🎮 Control Manual</h2>
+      <p style="color: #666; margin-bottom: 20px;">Solo usar si el robot está disponible</p>
+      
+      <div class="motor-control">
+        <div></div>
+        <button class="motor-btn" onclick="sendCommand('AVANZAR')">⬆️</button>
+        <div></div>
+        
+        <button class="motor-btn" onclick="sendCommand('IZQUIERDA')">⬅️</button>
+        <button class="motor-btn stop" onclick="sendCommand('QUIETO')">⏹️</button>
+        <button class="motor-btn" onclick="sendCommand('DERECHA')">➡️</button>
+        
+        <div></div>
+        <button class="motor-btn" onclick="sendCommand('ATRAS')">⬇️</button>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- LOG DE EVENTOS -->
+    <div class="log-section">
+      <h2>📋 Registro de Eventos</h2>
+      <div class="log-container" id="logContainer">
+        <div class="log-entry">Sistema iniciando...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT MQTT Y LÓGICA -->
   <script>
-    // ================================================
-    // CONFIGURACIÓN DEL BROKER HIVE MQ CLOUD
-    // ================================================
+    // ====
+    // CONFIGURACIÓN MQTT
+    // ====
     const broker = 'wss://958d6cbfe5ce4f0581776ff12f2049b4.s1.eu.hivemq.cloud:8884/mqtt';
     const options = {
       username: "Omarkings",
@@ -129,61 +526,346 @@
     };
 
     const client = mqtt.connect(broker, options);
-    const topicControl = "omar/led/control";
-    const topicStatus = "omar/led/status";
 
-    // ================================================
-    // EVENTOS DE CONEXIÓN
-    // ================================================
+    // Topics
+    const TOPICS = {
+      gps: "omar/robot/gps",
+      gps_status: "omar/robot/gps_status",
+      estado: "omar/robot/estado",
+      geocerca: "omar/robot/geocerca",
+      navigation: "omar/robot/navigation",
+      manual: "omar/manual/accion",
+      alerta: "kinect/alerta_led"
+    };
+
+    // Estado global
+    let robotState = {
+      status: 'desconectado',
+      lat: null,
+      lon: null,
+      destination: null,
+      distance: null,
+      gpsAvailable: false,
+      busy: false
+    };
+
+    let userLocation = null;
+
+    // ====
+    // FUNCIONES DE LOG
+    // ====
+    function addLog(message, type = 'info') {
+      const logContainer = document.getElementById('logContainer');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      const timestamp = new Date().toLocaleTimeString();
+      entry.textContent = `[${timestamp}] ${message}`;
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+      
+      // Limitar a 100 entradas
+      while (logContainer.children.length > 100) {
+        logContainer.removeChild(logContainer.firstChild);
+      }
+    }
+
+    // ====
+    // EVENTOS MQTT
+    // ====
     client.on('connect', () => {
       console.log("✅ Conectado a HiveMQ Cloud");
-      document.getElementById('status').innerText = "Conectado ✅";
-      client.subscribe(topicStatus);
+      document.getElementById('connectionDot').className = 'connection-dot connected';
+      document.getElementById('connectionText').textContent = 'Conectado';
+      
+      // Suscribirse a todos los topics
+      Object.values(TOPICS).forEach(topic => {
+        client.subscribe(topic);
+      });
+      
+      addLog('Conectado al broker MQTT', 'info');
+      updateRobotStatus('disponible');
     });
 
     client.on('error', (error) => {
       console.error("❌ Error de conexión:", error);
-      document.getElementById('status').innerHTML =
-        "Error de conexión ❌<br>" + (error.message || "Verifica usuario y contraseña");
+      document.getElementById('connectionDot').className = 'connection-dot disconnected';
+      document.getElementById('connectionText').textContent = 'Desconectado';
+      addLog('Error de conexión: ' + error.message, 'error');
     });
 
-    // ================================================
-    // EVENTO DE MENSAJE (ESTADO)
-    // ================================================
     client.on('message', (topic, message) => {
-      if (topic === topicStatus) {
-        const text = message.toString();
-        document.getElementById('status').innerText = "Estado: " + text;
-
-        if (text.includes("encendido")) {
-          document.getElementById('indicator').style.backgroundColor = "green";
-        } else if (text.includes("apagado")) {
-          document.getElementById('indicator').style.backgroundColor = "red";
-        } else {
-          document.getElementById('indicator').style.backgroundColor = "gray";
-        }
+      const msg = message.toString();
+      
+      switch(topic) {
+        case TOPICS.gps:
+          handleGPSUpdate(msg);
+          break;
+        case TOPICS.gps_status:
+          handleGPSStatus(msg);
+          break;
+        case TOPICS.estado:
+          handleEstadoUpdate(msg);
+          break;
+        case TOPICS.geocerca:
+          handleGeocercaUpdate(msg);
+          break;
       }
     });
 
-    // ================================================
-    // FUNCIONES PARA PUBLICAR COMANDOS MQTT
-    // ================================================
-    function enviarComando(cmd) {
-      client.publish(topicControl, cmd);
-      document.getElementById('status').innerText = "Comando enviado: " + cmd;
-      console.log("📤 Enviado:", cmd);
+    // ====
+    // HANDLERS DE MENSAJES
+    // ====
+    function handleGPSUpdate(msg) {
+      try {
+        const parts = msg.split('|');
+        const coords = parts[0].split(',');
+        robotState.lat = parseFloat(coords[0]);
+        robotState.lon = parseFloat(coords[1]);
+        
+        document.getElementById('gpsCoords').textContent = 
+          `${robotState.lat.toFixed(6)}, ${robotState.lon.toFixed(6)}`;
+        
+        addLog(`GPS actualizado: ${robotState.lat.toFixed(6)}, ${robotState.lon.toFixed(6)}`);
+        
+        // Actualizar ubicación actual
+        updateCurrentLocation();
+      } catch (e) {
+        addLog('Error parseando GPS: ' + e.message, 'error');
+      }
     }
 
-    // LED
-    document.getElementById('on').onclick = () => enviarComando("ON");
-    document.getElementById('off').onclick = () => enviarComando("OFF");
+    function handleGPSStatus(msg) {
+      robotState.gpsAvailable = (msg === 'DISPONIBLE');
+      addLog(`GPS del robot: ${msg}`);
+    }
 
-    // MOTORES
-    document.getElementById('avanzar').onclick = () => enviarComando("AVANZAR");
-    document.getElementById('retroceder').onclick = () => enviarComando("RETROCEDER");
-    document.getElementById('izquierda').onclick = () => enviarComando("IZQUIERDA");
-    document.getElementById('derecha').onclick = () => enviarComando("DERECHA");
-    document.getElementById('stop').onclick = () => enviarComando("STOP");
+    function handleEstadoUpdate(msg) {
+      addLog(`Estado: ${msg}`);
+      
+      if (msg.includes('navegando') || msg.includes('avanzando')) {
+        updateRobotStatus('navegando');
+      } else if (msg.includes('ocupado') || msg.includes('llevando')) {
+        updateRobotStatus('ocupado');
+      } else if (msg.includes('quieto') || msg.includes('detenido')) {
+        updateRobotStatus('disponible');
+      }
+    }
+
+    function handleGeocercaUpdate(msg) {
+      if (msg === 'FUERA') {
+        addLog('⚠️ Robot fuera de geocerca!', 'warning');
+      }
+    }
+
+    // ====
+    // ACTUALIZAR UI
+    // ====
+    function updateRobotStatus(status) {
+      robotState.status = status;
+      const badge = document.getElementById('robotStatus');
+      
+      badge.className = 'status-badge';
+      
+      switch(status) {
+        case 'disponible':
+          badge.classList.add('disponible');
+          badge.textContent = '✅ Disponible';
+          robotState.busy = false;
+          break;
+        case 'ocupado':
+          badge.classList.add('ocupado');
+          badge.textContent = '⏳ Ocupado';
+          robotState.busy = true;
+          break;
+        case 'navegando':
+          badge.classList.add('navegando');
+          badge.textContent = '🚀 Navegando';
+          robotState.busy = true;
+          break;
+        default:
+          badge.classList.add('desconectado');
+          badge.textContent = '❌ Desconectado';
+          robotState.busy = false;
+      }
+      
+      updateCallButton();
+    }
+
+    function updateCurrentLocation() {
+      // Determinar ubicación aproximada basada en coordenadas
+      if (!robotState.lat || !robotState.lon) return;
+      
+      const locations = {
+        timhortons: { lat: 20.613984, lon: -100.403511, name: 'Tim Hortons' },
+        biblioteca: { lat: 20.613246, lon: -100.403285, name: 'Biblioteca' }
+      };
+      
+      let nearest = null;
+      let minDist = Infinity;
+      
+      for (let [key, loc] of Object.entries(locations)) {
+        const dist = calculateDistance(robotState.lat, robotState.lon, loc.lat, loc.lon);
+        if (dist < minDist && dist < 50) { // Dentro de 50 metros
+          minDist = dist;
+          nearest = loc.name;
+        }
+      }
+      
+      document.getElementById('currentLocation').textContent = 
+        nearest || 'En tránsito';
+    }
+
+    function updateCallButton() {
+      const btn = document.getElementById('callRobotBtn');
+      btn.disabled = robotState.busy;
+      
+      if (robotState.busy) {
+        btn.textContent = '⏳ Robot Ocupado';
+      } else {
+        btn.textContent = '🚀 Llamar Robot a Mi Ubicación';
+      }
+    }
+
+    // ====
+    // FUNCIONES DE CONTROL
+    // ====
+    function sendCommand(cmd) {
+      if (robotState.busy && cmd !== 'QUIETO') {
+        addLog('Robot ocupado, comando ignorado', 'warning');
+        return;
+      }
+      
+      client.publish(TOPICS.manual, cmd);
+      addLog(`Comando manual enviado: ${cmd}`);
+    }
+
+    function sendToDestination(dest) {
+      if (robotState.busy) {
+        addLog('Robot ocupado, no se puede enviar a destino', 'warning');
+        alert('El robot está ocupado actualmente');
+        return;
+      }
+      
+      const destinations = {
+        timhortons: 'Tim Hortons',
+        biblioteca: 'Biblioteca'
+      };
+      
+      const destName = destinations[dest];
+      
+      if (!destName) {
+        addLog('Destino no disponible', 'error');
+        return;
+      }
+      
+      // Enviar comando de navegación
+      client.publish(TOPICS.navigation, `NAVEGAR_${dest.toUpperCase()}`);
+      
+      document.getElementById('destination').textContent = destName;
+      updateRobotStatus('navegando');
+      
+      addLog(`🎯 Robot enviado a: ${destName}`);
+      alert(`Robot en camino a ${destName}`);
+    }
+
+    function callRobot() {
+      if (robotState.busy) {
+        alert('El robot está ocupado actualmente');
+        return;
+      }
+      
+      // Obtener ubicación del usuario
+      if (!navigator.geolocation) {
+        alert('Tu navegador no soporta geolocalización');
+        return;
+      }
+      
+      document.getElementById('callStatus').textContent = '📍 Obteniendo tu ubicación...';
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          userLocation = {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          };
+          
+          // Verificar si está en zona segura (campus)
+          if (!isInSafeZone(userLocation.lat, userLocation.lon)) {
+            alert('⚠️ Estás fuera de la zona segura del campus. El robot no puede ir a tu ubicación.');
+            document.getElementById('callStatus').textContent = '❌ Fuera de zona segura';
+            addLog('Llamada rechazada: fuera de zona segura', 'warning');
+            return;
+          }
+          
+          // Enviar ubicación al robot
+          const locationMsg = `${userLocation.lat},${userLocation.lon}`;
+          client.publish(TOPICS.navigation, `VENIR_A:${locationMsg}`);
+          
+          document.getElementById('callStatus').textContent = '✅ Robot en camino a tu ubicación';
+          updateRobotStatus('navegando');
+          
+          addLog(`📞 Robot llamado a: ${userLocation.lat.toFixed(6)}, ${userLocation.lon.toFixed(6)}`);
+          alert('¡Robot en camino a tu ubicación!');
+        },
+        (error) => {
+          alert('No se pudo obtener tu ubicación: ' + error.message);
+          document.getElementById('callStatus').textContent = '❌ Error obteniendo ubicación';
+          addLog('Error de geolocalización: ' + error.message, 'error');
+        }
+      );
+    }
+
+    function emergencyStop() {
+      if (confirm('¿Estás seguro de detener el robot en emergencia?')) {
+        client.publish(TOPICS.manual, 'QUIETO');
+        client.publish(TOPICS.alerta, 'ON');
+        
+        updateRobotStatus('disponible');
+        document.getElementById('destination').textContent = 'Ninguno';
+        
+        addLog('🛑 PARADA DE EMERGENCIA ACTIVADA', 'error');
+        alert('Robot detenido');
+      }
+    }
+
+    // ====
+    // FUNCIONES AUXILIARES
+    // ====
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371000; // Radio de la Tierra en metros
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+      return R * c;
+    }
+
+    function isInSafeZone(lat, lon) {
+      // Geocerca del ITESM Querétaro (polígono simplificado)
+      const bounds = {
+        minLat: 20.612,
+        maxLat: 20.615,
+        minLon: -100.404,
+        maxLon: -100.402
+      };
+      
+      return lat >= bounds.minLat && lat <= bounds.maxLat &&
+             lon >= bounds.minLon && lon <= bounds.maxLon;
+    }
+
+    // ====
+    // INICIALIZACIÓN
+    // ====
+    window.onload = () => {
+      addLog('Sistema web iniciado');
+      addLog('Esperando conexión con el robot...');
+    };
   </script>
 </body>
 </html>
