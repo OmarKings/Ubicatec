@@ -1,4 +1,4 @@
-# Asistente TEC Mejorado - Con navegación y control de movimiento
+# Asistente TEC Optimizado - 3 modos: Manos, Voz, Teclado
 
 import os
 import warnings
@@ -12,7 +12,6 @@ import joblib
 import time
 import queue as qmod
 from collections import deque, Counter
-import requests
 
 import pyttsx3
 from googletrans import Translator
@@ -21,14 +20,9 @@ DetectorFactory.seed = 0
 import speech_recognition as sr
 import unicodedata
 
-import paho.mqtt.client as mqtt
-
-# Importar API de navegación
-from navigation_api import process_user_query, navigate_to_location, get_navigation_instruction
-
-# ====
-#    UTILIDAD LIMPIAR TEXTO
-# ====
+# =========================================================
+#                  UTILIDAD LIMPIAR TEXTO
+# =========================================================
 def clean_text(s):
     """Quita acentos, tildes y ñ/Ñ"""
     s = s.replace("ñ", "n").replace("Ñ", "N")
@@ -36,12 +30,12 @@ def clean_text(s):
     return "".join(c for c in s if not unicodedata.combining(c))
 
 
-# ====
-#    CONFIG DE PANTALLA Y UI
-# ====
+# =========================================================
+#                 CONFIG DE PANTALLA Y UI
+# =========================================================
 WIN_W, WIN_H = 1920, 1080
 CONSOLE_H = int(WIN_H * 0.30)  
-CAM_H = WIN_H - CONSOLE_H    
+CAM_H = WIN_H - CONSOLE_H      
 
 WHITE = (255, 255, 255)
 TEC_BLUE = (0, 51, 160)
@@ -56,112 +50,14 @@ def add_log(src, msg):
     line = f"[{clean_text(src)}] {clean_text(msg)}"
     console_lines.append(line)
     print(line)
-    if src in ["SENAS", "VOZ", "TECLADO", "TRAD", "SISTEMA", "NAV", "GPS"]:
+    # Añadir línea en blanco para mejor legibilidad
+    if src in ["SENAS", "VOZ", "TECLADO", "TRAD", "SISTEMA"]:
         console_lines.append("")
 
 
-# ====
-#    MQTT CONFIGURACIÓN
-# ====
-MQTT_SERVER = "958d6cbfe5ce4f0581776ff12f2049b4.s1.eu.hivemq.cloud"
-MQTT_PORT = 8883
-MQTT_USER = "Omarkings"
-MQTT_PASS = "567129Aa"
-
-mqtt_client = None
-current_gps_lat = None
-current_gps_lon = None
-gps_disponible = False
-navegando = False
-destino_actual = None
-
-
-def on_mqtt_connect(client, userdata, flags, rc, properties=None):
-    if rc == 0:
-        add_log("MQTT", "Conectado al broker")
-        client.subscribe("omar/robot/gps")
-        client.subscribe("omar/robot/gps_status")
-    else:
-        add_log("MQTT", f"Error de conexion: {rc}")
-
-
-def on_mqtt_message(client, userdata, msg):
-    global current_gps_lat, current_gps_lon, gps_disponible
-    
-    topic = msg.topic
-    payload = msg.payload.decode()
-    
-    if topic == "omar/robot/gps":
-        try:
-            # Formato: "lat,lon|fecha hora"
-            coords = payload.split("|")[0]
-            lat, lon = coords.split(",")
-            current_gps_lat = float(lat)
-            current_gps_lon = float(lon)
-            add_log("GPS", f"Posicion actualizada: {lat}, {lon}")
-        except Exception as e:
-            add_log("GPS", f"Error parseando GPS: {e}")
-    
-    elif topic == "omar/robot/gps_status":
-        if payload == "DISPONIBLE":
-            gps_disponible = True
-            add_log("GPS", "GPS del ESP32 disponible")
-        else:
-            gps_disponible = False
-            add_log("GPS", "GPS del ESP32 no disponible - usando GPS de internet")
-
-
-def init_mqtt():
-    global mqtt_client
-    try:
-        mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-        mqtt_client.username_pw_set(MQTT_USER, MQTT_PASS)
-        mqtt_client.tls_set()
-        mqtt_client.on_connect = on_mqtt_connect
-        mqtt_client.on_message = on_mqtt_message
-        mqtt_client.connect(MQTT_SERVER, MQTT_PORT, 60)
-        mqtt_client.loop_start()
-        add_log("MQTT", "Cliente MQTT iniciado")
-    except Exception as e:
-        add_log("MQTT", f"Error iniciando MQTT: {e}")
-
-
-def get_gps_from_internet():
-    """Obtiene GPS aproximado desde la IP (fallback)"""
-    try:
-        response = requests.get("http://ip-api.com/json/", timeout=5)
-        data = response.json()
-        if data["status"] == "success":
-            return data["lat"], data["lon"]
-    except:
-        pass
-    # Fallback: coordenadas del ITESM Querétaro
-    return 20.613500, -100.403400
-
-
-def get_current_location():
-    """Obtiene la ubicación actual (GPS del ESP32 o internet)"""
-    global current_gps_lat, current_gps_lon, gps_disponible
-    
-    if gps_disponible and current_gps_lat and current_gps_lon:
-        return current_gps_lat, current_gps_lon
-    else:
-        # Usar GPS de internet
-        lat, lon = get_gps_from_internet()
-        add_log("GPS", f"Usando GPS de internet: {lat}, {lon}")
-        return lat, lon
-
-
-def send_navigation_command(command):
-    """Envía comando de navegación al robot"""
-    if mqtt_client:
-        mqtt_client.publish("omar/robot/navigation", command.upper())
-        add_log("NAV", f"Comando enviado: {command}")
-
-
-# ====
-#    MODELO DE SENAS
-# ====
+# =========================================================
+#                 MODELO DE SENAS
+# =========================================================
 model = None
 classes = None
 
@@ -180,9 +76,10 @@ def load_sign_model():
         else:
             with open(model_file, "rb") as f:
                 data = pickle.load(f)
-            model = data["model"]
-            classes = model.classes_
+                model = data["model"]
+                classes = model.classes_
 
+        # Reemplazar alfabeto por uno sin ñ
         letters = [chr(65 + i) for i in range(26)]
         classes = np.array([clean_text(c) for c in letters])
 
@@ -193,9 +90,9 @@ def load_sign_model():
 load_sign_model()
 
 
-# ====
-#    TRADUCCION Y TTS
-# ====
+# =========================================================
+#                TRADUCCION Y TTS
+# =========================================================
 translator = Translator()
 
 def decir(texto):
@@ -232,13 +129,13 @@ def auto_translate(frase):
         add_log("TRAD", f"Error: {e}")
 
 
-# ====
-#    MICROFONO Y WAKEWORD
-# ====
+# =========================================================
+#                MICROFONO Y WAKEWORD
+# =========================================================
 voice_events = qmod.Queue()
 voice_active = False
 current_voice_phrase = ""
-current_mode = "manos"  # manos, voz, teclado, navegacion
+current_mode = "manos"  # manos, voz, teclado
 
 
 def detect_mic_index():
@@ -261,7 +158,7 @@ def mic_callback(recognizer, audio):
         txt = clean_text(txt)
         add_log("VOZ", f"Escuchado: {txt}")
     except sr.UnknownValueError:
-        return
+        return  # No se entendió el audio
     except sr.RequestError as e:
         add_log("VOZ", f"Error de servicio (reconocedor Google): {e}")
         return
@@ -285,9 +182,9 @@ def mic_callback(recognizer, audio):
 def start_mic_background():
     try:
         rec = sr.Recognizer()
-        rec.energy_threshold = 300
+        rec.energy_threshold = 300  # Sensibilidad del micrófono
         rec.dynamic_energy_threshold = True
-        rec.pause_threshold = 0.8
+        rec.pause_threshold = 0.8  # Pausa entre palabras
         
         mic = sr.Microphone(device_index=MIC_INDEX)
         add_log("VOZ", "Ajustando microfono...")
@@ -302,9 +199,9 @@ def start_mic_background():
         add_log("VOZ", f"Error iniciando microfono: {e}")
 
 
-# ====
-#    ESTADO DE SENAS
-# ====
+# =========================================================
+#                 ESTADO DE SENAS
+# =========================================================
 current_sign_word = ""
 last_letter = "?"
 last_conf = 0.0
@@ -318,96 +215,13 @@ USE_LEFT_HAND_ONLY = True
 ENABLE_FLIP = True
 MIRROR_LANDMARKS = True
 
-# NUEVO: Control de movimiento
-movement_enabled = True  # Por defecto el robot puede moverse
-
 # Estado de teclado
 current_text_keyboard = ""
 
 
-# ====
-#    PROCESAMIENTO DE NAVEGACIÓN
-# ====
-def process_navigation_query(query):
-    """Procesa una consulta de navegación del usuario"""
-    global navegando, destino_actual
-    
-    result = process_user_query(query)
-    
-    if result["type"] == "navigation":
-        # Usuario quiere ir a un lugar específico
-        destino_actual = result["destination_id"]
-        navegando = True
-        add_log("NAV", f"Navegando a: {result['destination_name']}")
-        decir(f"Te llevare a {result['destination_name']}")
-        return True
-    
-    elif result["type"] == "navigation_unknown":
-        # Usuario quiere ir a algún lugar pero no se encontró
-        lugares = ", ".join(result["available_locations"])
-        msg = f"No encontre ese lugar. Puedo llevarte a: {lugares}"
-        add_log("NAV", msg)
-        decir(msg)
-        return False
-    
-    return False
-
-
-def update_navigation():
-    """Actualiza la navegación si está activa"""
-    global navegando, destino_actual
-    
-    if not navegando or not destino_actual:
-        return
-    
-    # Obtener ubicación actual
-    lat, lon = get_current_location()
-    
-    if lat is None or lon is None:
-        add_log("NAV", "No se puede navegar sin GPS")
-        return
-    
-    # Calcular navegación
-    nav_info = navigate_to_location(lat, lon, destino_actual)
-    
-    if nav_info is None:
-        add_log("NAV", "Error calculando navegacion")
-        return
-    
-    # Generar instrucción
-    instruction = get_navigation_instruction(nav_info)
-    add_log("NAV", instruction)
-    
-    # Verificar si llegamos
-    if nav_info["arrived"]:
-        navegando = False
-        destino_actual = None
-        send_navigation_command("QUIETO")
-        decir("Hemos llegado a tu destino")
-        return
-    
-    # Enviar comando de dirección
-    direction = nav_info["direction"]
-    
-    # Mapear dirección a comando del robot
-    command_map = {
-        "adelante": "ADELANTE",
-        "derecha_ligera": "DERECHA",
-        "derecha": "DERECHA",
-        "derecha_atras": "DERECHA",
-        "atras": "ATRAS",
-        "izquierda_atras": "IZQUIERDA",
-        "izquierda": "IZQUIERDA",
-        "izquierda_ligera": "IZQUIERDA"
-    }
-    
-    command = command_map.get(direction, "QUIETO")
-    send_navigation_command(command)
-
-
-# ====
-#    UI (sin PIL)
-# ====
+# =========================================================
+#                    UI (sin PIL)
+# =========================================================
 def put_text(img, text, x, y, scale=0.8, color=(255,255,255), thickness=2):
     text = clean_text(text)
     cv2.putText(img, text, (int(x), int(y)),
@@ -423,7 +237,7 @@ def draw_console(img):
     lines = list(console_lines)
     n = len(lines)
 
-    line_height = 30
+    line_height = 30  # Más espacio entre líneas
     padding_top = 25
     padding_left = 40
     visible_lines = (CONSOLE_H - padding_top - 10) // line_height
@@ -459,17 +273,14 @@ def place_cam(frame, canvas):
     return canvas, xo
 
 
-# ====
-#    LOOP PRINCIPAL
-# ====
+# =========================================================
+#                        LOOP PRINCIPAL
+# =========================================================
 def main():
     global current_sign_word, last_letter, last_conf, last_valid
     global last_det, voice_active, current_voice_phrase, console_offset
-    global current_mode, current_text_keyboard, movement_enabled
+    global current_mode, current_text_keyboard
 
-    # Iniciar MQTT
-    init_mqtt()
-    
     start_mic_background()
 
     mpHands = mp.solutions.hands
@@ -485,11 +296,8 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH,1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
 
-    add_log("SISTEMA", "Asistente TEC mejorado iniciado.")
+    add_log("SISTEMA", "Asistente TEC optimizado iniciado.")
     add_log("SISTEMA", "Modo inicial: MANOS")
-    add_log("SISTEMA", "Movimiento: HABILITADO")
-
-    last_nav_update = time.time()
 
     while True:
         ret, frame = cap.read()
@@ -501,9 +309,9 @@ def main():
 
         status = "Sin mano"
 
-        # ====
-        #    PROCESADO DE SENAS (solo en modo manos)
-        # ====
+        # ===========================
+        #      PROCESADO DE SENAS (solo en modo manos)
+        # ===========================
         if model is not None and current_mode == "manos":
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = hands.process(rgb)
@@ -514,7 +322,7 @@ def main():
                     pred_buffer.clear()
 
                 for handLms, handedness in zip(results.multi_hand_landmarks,
-                                                results.multi_handedness):
+                                               results.multi_handedness):
 
                     label = handedness.classification[0].label
                     if ENABLE_FLIP:
@@ -555,19 +363,6 @@ def main():
                             if not current_sign_word or current_sign_word[-1] != last_letter:
                                 current_sign_word += last_letter
                                 add_log("SENAS", f"Parcial: {current_sign_word}")
-                                
-                                # NUEVO: Detectar comando de movimiento
-                                # Si deletrea "MOVER" = habilitar movimiento
-                                # Si deletrea "PARAR" = deshabilitar movimiento
-                                if "MOVER" in current_sign_word.upper():
-                                    movement_enabled = True
-                                    add_log("SISTEMA", "Movimiento HABILITADO")
-                                    current_sign_word = ""
-                                elif "PARAR" in current_sign_word.upper():
-                                    movement_enabled = False
-                                    add_log("SISTEMA", "Movimiento DESHABILITADO")
-                                    send_navigation_command("QUIETO")
-                                    current_sign_word = ""
                         else:
                             status = "Procesando gesto..."
 
@@ -578,9 +373,9 @@ def main():
                     last_letter = "?"
 
 
-        # ====
-        #    PROCESADO DE VOZ
-        # ====
+        # ===========================
+        #      PROCESADO DE VOZ
+        # ===========================
         while not voice_events.empty():
             t, text = voice_events.get()
             text = clean_text(text)
@@ -590,43 +385,27 @@ def main():
                 add_log("VOZ", f"Parcial: {current_voice_phrase}")
 
 
-        # ====
-        #    ACTUALIZAR NAVEGACIÓN
-        # ====
-        if navegando and time.time() - last_nav_update > 2.0:
-            update_navigation()
-            last_nav_update = time.time()
-
-
-        # ====
-        #    DIBUJAR UI
-        # ====
+        # ===========================
+        #         DIBUJAR UI
+        # ===========================
         canvas = np.zeros((WIN_H, WIN_W, 3), dtype=np.uint8)
         canvas, xo = place_cam(frame, canvas)
 
         # Indicador de modo con color
         mode_color = (100, 255, 100) if current_mode == "manos" else (255, 200, 0) if current_mode == "voz" else (100, 200, 255)
         
-        # Indicador de movimiento
-        mov_color = (0, 255, 0) if movement_enabled else (0, 0, 255)
-        mov_text = "HABILITADO" if movement_enabled else "DESHABILITADO"
-        
         put_text(canvas, status, 40, 60, scale=1.0, color=TEC_BLUE_LIGHT, thickness=2)
         put_text(canvas, f"Modo: {current_mode.upper()}", 40, 100, scale=0.9, color=mode_color, thickness=2)
-        put_text(canvas, f"Movimiento: {mov_text}", 40, 140, scale=0.8, color=mov_color, thickness=2)
-        put_text(canvas, f"Senas: {current_sign_word}", 40, 180, scale=0.8)
-        put_text(canvas, f"Voz: {current_voice_phrase}", 40, 220, scale=0.8)
-        put_text(canvas, f"Teclado: {current_text_keyboard}", 40, 260, scale=0.8)
-        
-        if navegando:
-            put_text(canvas, f"NAVEGANDO a {destino_actual}", 40, 300, scale=0.9, color=(0, 255, 255), thickness=2)
+        put_text(canvas, f"Senas: {current_sign_word}", 40, 140, scale=0.8)
+        put_text(canvas, f"Voz: {current_voice_phrase}", 40, 180, scale=0.8)
+        put_text(canvas, f"Teclado: {current_text_keyboard}", 40, 220, scale=0.8)
 
         put_text(canvas, "M=Mano | 'ayuda'/V=Voz | T=Teclado | Enter=Confirmar | Q/Esc=Salir",
-                 40, 340, scale=0.6, color=(180,180,180), thickness=1)
+                 40, 260, scale=0.6, color=(180,180,180), thickness=1)
 
         canvas = draw_console(canvas)
 
-        cv2.imshow("Asistente TEC Mejorado", canvas)
+        cv2.imshow("Asistente TEC Optimizado", canvas)
         key = cv2.waitKey(1) & 0xFFFF
 
         # Salir
@@ -649,9 +428,9 @@ def main():
 
         # Captura de texto en modo teclado
         if current_mode == "teclado":
-            if 32 <= key <= 126:
+            if 32 <= key <= 126:  # caracteres imprimibles básicos
                 current_text_keyboard += chr(key)
-            elif key == 8:
+            elif key == 8:  # Backspace
                 current_text_keyboard = current_text_keyboard[:-1]
 
         # scroll console ↑ ↓
@@ -663,43 +442,26 @@ def main():
         # ENTER = confirmar según el modo actual
         if key in (13, 10):
             if current_mode == "manos" and current_sign_word.strip():
-                frase = current_sign_word
-                add_log("SENAS", f"Confirmada: {frase}")
-                
-                # Verificar si es consulta de navegación
-                if not process_navigation_query(frase):
-                    auto_translate(frase)
-                
+                add_log("SENAS", f"Confirmada: {current_sign_word}")
+                auto_translate(current_sign_word)
                 current_sign_word = ""
 
             elif current_mode == "voz" and current_voice_phrase.strip():
-                frase = current_voice_phrase
-                add_log("VOZ", f"Confirmada: {frase}")
-                
-                # Verificar si es consulta de navegación
-                if not process_navigation_query(frase):
-                    auto_translate(frase)
-                
+                add_log("VOZ", f"Confirmada: {current_voice_phrase}")
+                auto_translate(current_voice_phrase)
                 current_voice_phrase = ""
                 voice_active = False
+                # Regresar a modo manos después de usar voz
                 current_mode = "manos"
                 add_log("SISTEMA", "Se regresa a modo MANOS")
 
             elif current_mode == "teclado" and current_text_keyboard.strip():
-                frase = current_text_keyboard
-                add_log("TECLADO", f"Confirmada: {frase}")
-                
-                # Verificar si es consulta de navegación
-                if not process_navigation_query(frase):
-                    auto_translate(frase)
-                
+                add_log("TECLADO", f"Confirmada: {current_text_keyboard}")
+                auto_translate(current_text_keyboard)
                 current_text_keyboard = ""
 
     cap.release()
     cv2.destroyAllWindows()
-    if mqtt_client:
-        mqtt_client.loop_stop()
-        mqtt_client.disconnect()
 
 
 if __name__ == "__main__":

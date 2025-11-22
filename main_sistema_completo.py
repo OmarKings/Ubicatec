@@ -1,155 +1,257 @@
+"""
+Sistema Completo de Robot Asistente TEC
+Ejecuta ambos procesos con sus entornos virtuales correctos
+Adaptado a la estructura real del proyecto
+"""
+
 import subprocess
-import time
 import sys
+import os
+import time
+import signal
 
-print("\n" + "="*60)
+# ====================================================================
+# 🔧 CONFIGURACIÓN DE RUTAS - ADAPTADO A TU ESTRUCTURA REAL
+# ====================================================================
+
+# Entornos virtuales
+VENV_KINECT = r"C:\Users\OmarKings\Desktop\lidar\libfreenect-0.6.4\build\bin\Release\kinect_env_gpu\Scripts\python.exe"
+VENV_MAIN = r"C:\Users\OmarKings\Desktop\lidar\SignLanguage\venv_311\Scripts\python.exe"
+
+# Scripts
+SCRIPT_KINECT = r"C:\Users\OmarKings\Desktop\lidar\libfreenect-0.6.4\build\bin\Release\kinect_ai_collision\models\infer_real_time_mejorado.py"
+SCRIPT_MAIN = r"C:\Users\OmarKings\Desktop\lidar\SignLanguage\main_mejorado.py"
+
+# Directorios de trabajo
+WORKDIR_KINECT = r"C:\Users\OmarKings\Desktop\lidar\libfreenect-0.6.4\build\bin\Release\kinect_ai_collision\models"
+WORKDIR_MAIN = r"C:\Users\OmarKings\Desktop\lidar\SignLanguage"
+
+# ====================================================================
+# 📋 VERIFICACIÓN DE ARCHIVOS
+# ====================================================================
+
+archivos_requeridos = {
+    "Python kinect_env_gpu": VENV_KINECT,
+    "Python venv_311": VENV_MAIN,
+    "infer_real_time.py": SCRIPT_KINECT,
+    "main.py": SCRIPT_MAIN
+}
+
+print("=" * 70)
 print("🚀 SISTEMA COMPLETO DE ROBOT ASISTENTE TEC")
-print("="*60 + "\n")
-
-print("📋 Componentes del sistema:")
+print("=" * 70)
+print("\n📋 Componentes del sistema:")
 print("  1. Kinect AI (detección de obstáculos con U-Net)")
 print("  2. Reconocimiento de señas y voz (webcam)")
 print("  3. Sistema de navegación integrado")
 print("  4. Comunicación MQTT optimizada")
-print("\n")
+print()
 
-# ====
-# CONFIGURACIÓN DE RUTAS
-# ====
-# Ajusta estas rutas según tu sistema
-PY_KINECT = r"C:\Users\OmarKings\Desktop\lidar\libfreenect-0.6.4\build\bin\Release\kinect_env_gpu\Scripts\python.exe"
-KINECT_SCRIPT = r"C:\Users\OmarKings\Desktop\lidar\libfreenect-0.6.4\build\bin\Release\kinect_ai_collision\models\infer_real_time_mejorado.py"
-
-PY_MAIN = r"C:\Users\OmarKings\Desktop\lidar\SignLanguage\venv_311\Scripts\python.exe"
-MAIN_SCRIPT = r"C:\Users\OmarKings\Desktop\lidar\SignLanguage\main_mejorado.py"
-
-# ====
-# VERIFICAR ARCHIVOS
-# ====
-import os
-
+# Verificar archivos
 print("🔍 Verificando archivos...")
+faltantes = []
+for nombre, ruta in archivos_requeridos.items():
+    if os.path.exists(ruta):
+        print(f"  ✓ {nombre}")
+    else:
+        print(f"  ✗ {nombre} NO encontrado")
+        print(f"    Ruta: {ruta}")
+        faltantes.append(nombre)
 
-if not os.path.exists(PY_KINECT):
-    print(f"❌ ERROR: No se encuentra Python de Kinect: {PY_KINECT}")
+if faltantes:
+    print(f"\n❌ Faltan {len(faltantes)} archivo(s). No se puede continuar.")
+    print("\n💡 Verifica las rutas en la sección de configuración del script.")
+    input("\nPresiona Enter para salir...")
     sys.exit(1)
 
-if not os.path.exists(KINECT_SCRIPT):
-    print(f"❌ ERROR: No se encuentra script de Kinect: {KINECT_SCRIPT}")
-    print("   Asegurate de copiar 'infer_real_time_mejorado.py' a la carpeta correcta")
-    sys.exit(1)
+print("\n✅ Todos los archivos encontrados")
 
-if not os.path.exists(PY_MAIN):
-    print(f"❌ ERROR: No se encuentra Python principal: {PY_MAIN}")
-    sys.exit(1)
+# ====================================================================
+# 🔧 PROCESOS
+# ====================================================================
+proceso_kinect = None
+proceso_main = None
 
-if not os.path.exists(MAIN_SCRIPT):
-    print(f"❌ ERROR: No se encuentra script principal: {MAIN_SCRIPT}")
-    print("   Asegurate de copiar 'main_mejorado.py' a la carpeta correcta")
-    sys.exit(1)
+def cleanup(signum=None, frame=None):
+    """Limpia procesos al salir"""
+    print("\n\n🛑 Cerrando sistema...")
+    
+    if proceso_kinect and proceso_kinect.poll() is None:
+        print("  Cerrando proceso Kinect...")
+        proceso_kinect.terminate()
+        try:
+            proceso_kinect.wait(timeout=5)
+            print("  ✓ Proceso Kinect cerrado")
+        except subprocess.TimeoutExpired:
+            print("  ⚠️  Forzando cierre de proceso Kinect...")
+            proceso_kinect.kill()
+            proceso_kinect.wait()
+            print("  ✓ Proceso Kinect forzado a cerrar")
+    
+    if proceso_main and proceso_main.poll() is None:
+        print("  Cerrando proceso principal...")
+        proceso_main.terminate()
+        try:
+            proceso_main.wait(timeout=5)
+            print("  ✓ Proceso principal cerrado")
+        except subprocess.TimeoutExpired:
+            print("  ⚠️  Forzando cierre de proceso principal...")
+            proceso_main.kill()
+            proceso_main.wait()
+            print("  ✓ Proceso principal forzado a cerrar")
+    
+    print("\n✅ Sistema cerrado correctamente")
+    print("\nPresiona Enter para salir...")
+    input()
+    sys.exit(0)
 
-print("✅ Todos los archivos encontrados\n")
+# Registrar manejador de señales
+signal.signal(signal.SIGINT, cleanup)
+signal.signal(signal.SIGTERM, cleanup)
 
-# ====
-# INICIAR PROCESOS
-# ====
-
-print("="*60)
-print("🟢 INICIANDO PROCESO KINECT (detección de obstáculos)")
-print("="*60)
-kinect_process = subprocess.Popen(
-    [PY_KINECT, KINECT_SCRIPT],
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
-    text=True
-)
-
-time.sleep(2)
-
-print("\n" + "="*60)
-print("🔵 INICIANDO PROCESO PRINCIPAL (señas, voz, navegación)")
-print("="*60)
-main_process = subprocess.Popen(
-    [PY_MAIN, MAIN_SCRIPT],
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
-    text=True
-)
-
-time.sleep(1)
-
-# ====
-# MONITOREO DEL SISTEMA
-# ====
-
-print("\n" + "="*60)
-print("📡 SISTEMA EN EJECUCIÓN")
-print("="*60)
-print("\n🎮 CONTROLES:")
-print("  • M = Modo manos (señas)")
-print("  • V = Modo voz (o di 'ayuda')")
-print("  • T = Modo teclado")
-print("  • Enter = Confirmar frase")
-print("  • Q/Esc = Salir")
-print("\n🗺️  NAVEGACIÓN:")
-print("  • Di o escribe: 'quiero ir a tims'")
-print("  • Di o escribe: 'llevame a la biblioteca'")
-print("  • Di o escribe: 'donde esta tim hortons'")
-print("\n✋ CONTROL DE MOVIMIENTO (por señas):")
-print("  • Deletrea 'MOVER' = Habilitar movimiento")
-print("  • Deletrea 'PARAR' = Deshabilitar movimiento")
-print("\n⚠️  CTRL + C para cerrar todo el sistema\n")
-print("="*60 + "\n")
-
+# ====================================================================
+# 🚀 INICIAR PROCESOS
+# ====================================================================
 try:
-    # Mantener el sistema corriendo
+    print("\n" + "=" * 70)
+    print("🟢 INICIANDO PROCESO KINECT (detección de obstáculos)")
+    print("=" * 70)
+    print(f"Entorno: kinect_env_gpu")
+    print(f"Script: {SCRIPT_KINECT}")
+    print(f"Directorio: {WORKDIR_KINECT}")
+    print()
+    
+    # Iniciar proceso Kinect con su entorno
+    proceso_kinect = subprocess.Popen(
+        [VENV_KINECT, SCRIPT_KINECT],
+        cwd=WORKDIR_KINECT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1
+    )
+    
+    # Esperar un poco para ver si inicia correctamente
+    print("⏳ Esperando inicialización del Kinect...")
+    time.sleep(4)
+    
+    if proceso_kinect.poll() is not None:
+        # El proceso terminó inmediatamente - hay un error
+        stdout, stderr = proceso_kinect.communicate()
+        print("\n❌ ERROR: Proceso Kinect terminó inesperadamente")
+        print(f"   Código de salida: {proceso_kinect.returncode}")
+        print("\n📄 STDOUT:")
+        print(stdout if stdout else "(vacío)")
+        print("\n📄 STDERR:")
+        print(stderr if stderr else "(vacío)")
+        print("\n💡 Posibles causas:")
+        print("   • Kinect no está conectado (verifica luz verde)")
+        print("   • Falta el modelo U-Net en C:\\Users\\OmarKings\\Desktop\\weights\\best_unet.pth")
+        print("   • Error en unet_model.py")
+        print("   • Otro programa está usando el Kinect")
+        print("\n🔧 Para diagnosticar, ejecuta:")
+        print(f"   cd {WORKDIR_KINECT}")
+        print(f"   {VENV_KINECT} infer_real_time.py")
+        input("\nPresiona Enter para salir...")
+        sys.exit(1)
+    
+    print("✅ Proceso Kinect iniciado correctamente")
+    
+    print("\n" + "=" * 70)
+    print("🔵 INICIANDO PROCESO PRINCIPAL (señas, voz, navegación)")
+    print("=" * 70)
+    print(f"Entorno: venv_311")
+    print(f"Script: {SCRIPT_MAIN}")
+    print(f"Directorio: {WORKDIR_MAIN}")
+    print()
+    
+    # Iniciar proceso principal con su entorno
+    proceso_main = subprocess.Popen(
+        [VENV_MAIN, SCRIPT_MAIN],
+        cwd=WORKDIR_MAIN
+    )
+    
+    print("⏳ Esperando inicialización del asistente...")
+    time.sleep(3)
+    
+    if proceso_main.poll() is not None:
+        print("\n❌ ERROR: Proceso principal terminó inesperadamente")
+        print(f"   Código de salida: {proceso_main.returncode}")
+        print("\n🔧 Para diagnosticar, ejecuta:")
+        print(f"   cd {WORKDIR_MAIN}")
+        print(f"   {VENV_MAIN} main.py")
+        cleanup()
+        sys.exit(1)
+    
+    print("✅ Proceso principal iniciado correctamente")
+    
+    print("\n" + "=" * 70)
+    print("📡 SISTEMA EN EJECUCIÓN")
+    print("=" * 70)
+    print("\n🎮 CONTROLES:")
+    print("  • M = Modo manos (señas)")
+    print("  • V = Modo voz (o di 'ayuda')")
+    print("  • T = Modo teclado")
+    print("  • Enter = Confirmar frase")
+    print("  • Q/Esc = Salir")
+    print("\n🗺️  NAVEGACIÓN:")
+    print("  • Di o escribe: 'quiero ir a tims'")
+    print("  • Di o escribe: 'llevame a la biblioteca'")
+    print("  • Di o escribe: 'donde esta tim hortons'")
+    print("\n✋ CONTROL DE MOVIMIENTO (por señas):")
+    print("  • Deletrea 'MOVER' = Habilitar movimiento")
+    print("  • Deletrea 'PARAR' = Deshabilitar movimiento")
+    print("\n🎥 VENTANAS:")
+    print("  • Ventana 1: Kinect AI (detección de obstáculos)")
+    print("  • Ventana 2: Asistente TEC (señas/voz)")
+    print("\n⚠️  CTRL + C para cerrar todo el sistema")
+    print("\n" + "=" * 70)
+    print()
+    
+    # Monitorear procesos
+    print("🔄 Monitoreando procesos...")
+    print("   (Este script seguirá ejecutándose hasta que cierres las ventanas o presiones Ctrl+C)")
+    print()
+    
     while True:
-        # Verificar si los procesos siguen vivos
-        kinect_poll = kinect_process.poll()
-        main_poll = main_process.poll()
+        # Verificar si algún proceso terminó
+        kinect_status = proceso_kinect.poll()
+        main_status = proceso_main.poll()
         
-        if kinect_poll is not None:
+        if kinect_status is not None:
             print("\n⚠️  ADVERTENCIA: Proceso Kinect terminó inesperadamente")
-            print(f"   Código de salida: {kinect_poll}")
+            print(f"   Código de salida: {kinect_status}")
+            
+            # Leer salida de error si está disponible
+            try:
+                stderr = proceso_kinect.stderr.read()
+                if stderr:
+                    print("\n📄 Error del proceso Kinect:")
+                    print(stderr[:500])  # Primeros 500 caracteres
+            except:
+                pass
+            
+            print("\n🛑 Cerrando sistema completo...")
+            cleanup()
             break
         
-        if main_poll is not None:
-            print("\n⚠️  ADVERTENCIA: Proceso principal terminó inesperadamente")
-            print(f"   Código de salida: {main_poll}")
+        if main_status is not None:
+            print("\n✅ Proceso principal terminó")
+            print("   (Usuario cerró la ventana o presionó Q)")
+            print("\n🛑 Cerrando sistema completo...")
+            cleanup()
             break
         
+        # Esperar un poco antes de verificar de nuevo
         time.sleep(1)
 
 except KeyboardInterrupt:
-    print("\n\n" + "="*60)
-    print("🛑 DETENIENDO SISTEMA...")
-    print("="*60)
-    
-    print("\n🔴 Terminando proceso Kinect...")
-    kinect_process.terminate()
-    try:
-        kinect_process.wait(timeout=5)
-        print("✅ Proceso Kinect terminado")
-    except subprocess.TimeoutExpired:
-        print("⚠️  Forzando cierre de proceso Kinect...")
-        kinect_process.kill()
-    
-    print("\n🔴 Terminando proceso principal...")
-    main_process.terminate()
-    try:
-        main_process.wait(timeout=5)
-        print("✅ Proceso principal terminado")
-    except subprocess.TimeoutExpired:
-        print("⚠️  Forzando cierre de proceso principal...")
-        main_process.kill()
-    
-    print("\n" + "="*60)
-    print("✔️  SISTEMA APAGADO CORRECTAMENTE")
-    print("="*60 + "\n")
+    print("\n\n⚠️  Interrupción detectada (Ctrl+C)")
+    cleanup()
 
 except Exception as e:
     print(f"\n❌ ERROR INESPERADO: {e}")
-    print("\n🔴 Terminando procesos...")
-    kinect_process.terminate()
-    main_process.terminate()
-    print("✔️  Procesos terminados\n")
+    import traceback
+    traceback.print_exc()
+    print("\n🛑 Cerrando sistema...")
+    cleanup()

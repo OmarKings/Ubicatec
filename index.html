@@ -8,380 +8,398 @@
   
   <style>
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
     }
 
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    padding: 20px;
     }
 
     .container {
-      max-width: 1200px;
-      margin: 0 auto;
+    max-width: 1200px;
+    margin: 0 auto;
     }
 
     .header {
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      margin-bottom: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      text-align: center;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    text-align: center;
     }
 
     .header h1 {
-      color: #0038a8;
-      font-size: 2.5em;
-      margin-bottom: 10px;
+    color: #0038a8;
+    font-size: 2.5em;
+    margin-bottom: 10px;
     }
 
     .header .subtitle {
-      color: #666;
-      font-size: 1.1em;
+    color: #666;
+    font-size: 1.1em;
     }
 
     .status-card {
-      background: white;
-      border-radius: 20px;
-      padding: 25px;
-      margin-bottom: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
 
     .status-card h2 {
-      color: #0038a8;
-      margin-bottom: 20px;
-      font-size: 1.8em;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    color: #0038a8;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     }
 
     .status-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
     }
 
     .status-item {
-      background: #f8f9fa;
-      padding: 20px;
-      border-radius: 15px;
-      border-left: 5px solid #667eea;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 15px;
+    border-left: 5px solid #667eea;
     }
 
     .status-item .label {
-      color: #666;
-      font-size: 0.9em;
-      margin-bottom: 5px;
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 5px;
     }
 
     .status-item .value {
-      color: #333;
-      font-size: 1.3em;
-      font-weight: bold;
+    color: #333;
+    font-size: 1.3em;
+    font-weight: bold;
     }
 
     .status-badge {
-      display: inline-block;
-      padding: 8px 20px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 1.1em;
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 1.1em;
     }
 
     .status-badge.disponible {
-      background: #4CAF50;
-      color: white;
+    background: #4CAF50;
+    color: white;
     }
 
     .status-badge.ocupado {
-      background: #FF9800;
-      color: white;
+    background: #FF9800;
+    color: white;
     }
 
     .status-badge.navegando {
-      background: #2196F3;
-      color: white;
+    background: #2196F3;
+    color: white;
     }
 
     .status-badge.desconectado {
-      background: #f44336;
-      color: white;
+    background: #f44336;
+    color: white;
     }
 
     .map-container {
-      background: #e8eaf6;
-      border-radius: 15px;
-      padding: 20px;
-      margin-top: 20px;
-      min-height: 200px;
-      position: relative;
+    background: #e8eaf6;
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    min-height: 200px;
+    position: relative;
     }
 
     .map-container h3 {
-      color: #0038a8;
-      margin-bottom: 15px;
+    color: #0038a8;
+    margin-bottom: 15px;
     }
 
     .location-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
     }
 
     .location-icon {
-      font-size: 2em;
+    font-size: 2em;
     }
 
     .control-section {
-      background: white;
-      border-radius: 20px;
-      padding: 25px;
-      margin-bottom: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
 
     .control-section h2 {
-      color: #0038a8;
-      margin-bottom: 20px;
-      font-size: 1.8em;
+    color: #0038a8;
+    margin-bottom: 20px;
+    font-size: 1.8em;
     }
 
     .destination-buttons {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
     }
 
     .destination-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 20px;
-      border-radius: 15px;
-      font-size: 1.1em;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 20px;
+    border-radius: 15px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     }
 
     .destination-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }
 
     .destination-btn:active {
-      transform: translateY(0);
+    transform: translateY(0);
     }
 
     .destination-btn:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
     }
 
     .call-robot-section {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      border-radius: 20px;
-      padding: 30px;
-      margin-bottom: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      text-align: center;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    text-align: center;
     }
 
     .call-robot-section h2 {
-      color: white;
-      margin-bottom: 15px;
-      font-size: 2em;
+    color: white;
+    margin-bottom: 15px;
+    font-size: 2em;
     }
 
     .call-robot-section p {
-      color: white;
-      margin-bottom: 20px;
-      font-size: 1.1em;
+    color: white;
+    margin-bottom: 20px;
+    font-size: 1.1em;
     }
 
     .call-robot-btn {
-      background: white;
-      color: #f5576c;
-      border: none;
-      padding: 20px 40px;
-      border-radius: 50px;
-      font-size: 1.3em;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    background: white;
+    color: #f5576c;
+    border: none;
+    padding: 20px 40px;
+    border-radius: 50px;
+    font-size: 1.3em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     }
 
     .call-robot-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
     }
 
     .call-robot-btn:disabled {
-      background: #ccc;
-      color: #666;
-      cursor: not-allowed;
-      transform: none;
+    background: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    transform: none;
     }
 
     .motor-control {
-      display: grid;
-      grid-template-columns: repeat(3, 100px);
-      gap: 10px;
-      justify-content: center;
-      margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
     }
 
     .motor-btn {
-      background: #1976D2;
-      color: white;
-      border: none;
-      padding: 15px;
-      border-radius: 10px;
-      font-size: 1.2em;
-      cursor: pointer;
-      transition: all 0.3s ease;
+    background: #1976D2;
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
     }
 
     .motor-btn:hover {
-      background: #0D47A1;
-      transform: scale(1.05);
+    background: #0D47A1;
+    transform: scale(1.05);
     }
 
     .motor-btn:active {
-      transform: scale(0.95);
+    transform: scale(0.95);
     }
 
     .motor-btn.stop {
-      background: #FF9800;
+    background: #FF9800;
     }
 
     .motor-btn.stop:hover {
-      background: #F57C00;
+    background: #F57C00;
     }
 
     .connection-indicator {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: white;
-      padding: 15px 25px;
-      border-radius: 50px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 1000;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 50px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
     }
 
     .connection-dot {
-      width: 15px;
-      height: 15px;
-      border-radius: 50%;
-      background: gray;
-      animation: pulse 2s infinite;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: gray;
+    animation: pulse 2s infinite;
     }
 
     .connection-dot.connected {
-      background: #4CAF50;
+    background: #4CAF50;
     }
 
     .connection-dot.disconnected {
-      background: #f44336;
+    background: #f44336;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
     }
 
     .log-section {
-      background: white;
-      border-radius: 20px;
-      padding: 25px;
-      margin-bottom: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
 
     .log-section h2 {
-      color: #0038a8;
-      margin-bottom: 15px;
+    color: #0038a8;
+    margin-bottom: 15px;
     }
 
     .log-container {
-      background: #1e1e1e;
-      color: #00ff00;
-      padding: 20px;
-      border-radius: 10px;
-      max-height: 300px;
-      overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9em;
+    background: #1e1e1e;
+    color: #00ff00;
+    padding: 20px;
+    border-radius: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
     }
 
     .log-entry {
-      margin-bottom: 5px;
-      padding: 5px;
-      border-left: 3px solid #00ff00;
-      padding-left: 10px;
+    margin-bottom: 5px;
+    padding: 5px;
+    border-left: 3px solid #00ff00;
+    padding-left: 10px;
     }
 
     .log-entry.error {
-      border-left-color: #ff0000;
-      color: #ff6b6b;
+    border-left-color: #ff0000;
+    color: #ff6b6b;
     }
 
     .log-entry.warning {
-      border-left-color: #ffaa00;
-      color: #ffd93d;
+    border-left-color: #ffaa00;
+    color: #ffd93d;
     }
 
     .emergency-stop {
-      background: #f44336;
-      color: white;
-      border: none;
-      padding: 15px 30px;
-      border-radius: 10px;
-      font-size: 1.2em;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 20px;
-      width: 100%;
-      transition: all 0.3s ease;
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    width: 100%;
+    transition: all 0.3s ease;
     }
 
     .emergency-stop:hover {
-      background: #d32f2f;
-      transform: scale(1.02);
+    background: #d32f2f;
+    transform: scale(1.02);
+    }
+
+    /* Indicador de modo fallback PC */
+    .fallback-ind {
+      margin-top: 10px;
+      padding: 8px 15px;
+      border-radius: 15px;
+      font-weight: bold;
+      font-size: 0.95em;
+      display: inline-block;
+    }
+    .fallback-on {
+      background: #ff9800;
+      color: white;
+    }
+    .fallback-off {
+      background: #4CAF50;
+      color: white;
     }
 
     @media (max-width: 768px) {
-      .header h1 {
-        font-size: 1.8em;
-      }
-      
-      .status-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .destination-buttons {
-        grid-template-columns: 1fr;
-      }
+    .header h1 {
+    font-size: 1.8em;
+    }
+    
+    .status-grid {
+    grid-template-columns: 1fr;
+    }
+    
+    .destination-buttons {
+    grid-template-columns: 1fr;
+    }
     }
   </style>
 </head>
@@ -397,6 +415,9 @@
     <div class="header">
       <h1>🤖 Robot Asistente TEC</h1>
       <p class="subtitle">Sistema de Navegación y Control Inteligente</p>
+      <div id="fallbackMode" class="fallback-ind fallback-off">
+        Modo: Robot
+      </div>
     </div>
 
     <!-- ESTADO DEL ROBOT -->
@@ -434,8 +455,15 @@
         <div class="location-info">
           <span class="location-icon">📍</span>
           <div>
-            <strong>Coordenadas GPS:</strong><br>
+            <strong>Coordenadas GPS (Robot):</strong><br>
             <span id="gpsCoords">Esperando GPS...</span>
+          </div>
+        </div>
+        <div class="location-info">
+          <span class="location-icon">💻</span>
+          <div>
+            <strong>Coordenadas GPS (PC - fallback):</strong><br>
+            <span id="pcGpsCoords">No usadas</span>
           </div>
         </div>
         <div class="location-info">
@@ -514,9 +542,7 @@
 
   <!-- SCRIPT MQTT Y LÓGICA -->
   <script>
-    // ====
-    // CONFIGURACIÓN MQTT
-    // ====
+    // ==== CONFIGURACIÓN MQTT ====
     const broker = 'wss://958d6cbfe5ce4f0581776ff12f2049b4.s1.eu.hivemq.cloud:8884/mqtt';
     const options = {
       username: "Omarkings",
@@ -535,7 +561,10 @@
       geocerca: "omar/robot/geocerca",
       navigation: "omar/robot/navigation",
       manual: "omar/manual/accion",
-      alerta: "kinect/alerta_led"
+      alerta: "kinect/alerta_led",
+      pc_fallback: "omar/pc/fallback",
+      pc_geocerca: "omar/pc/geocerca",
+      pc_gps: "omar/pc/gps"
     };
 
     // Estado global
@@ -546,14 +575,45 @@
       destination: null,
       distance: null,
       gpsAvailable: false,
-      busy: false
+      busy: false,
+      lastGpsTime: 0
     };
 
     let userLocation = null;
 
-    // ====
-    // FUNCIONES DE LOG
-    // ====
+    // Estado fallback PC
+    let fallbackActivo = false;
+    let pcLocation = null;
+
+    const FALLBACK_TIMEOUT_MS = 10000; // 10 segundos sin GPS del robot
+
+    // Geocerca poligonal ITESM (misma que en ESP32)
+    const geoLat = [
+      20.613123, 20.613356, 20.613529, 20.613851, 20.613936,
+      20.614039, 20.614099, 20.614039, 20.613944, 20.613880,
+      20.613273, 20.613145, 20.613189, 20.613327, 20.613292
+    ];
+
+    const geoLon = [
+     -100.403724, -100.403872, -100.403560, -100.403539, -100.403598,
+     -100.403571, -100.403405, -100.403379, -100.403297, -100.403461,
+     -100.403356, -100.403289, -100.403187, -100.403243, -100.403336
+    ];
+
+    function puntoEnPoligono(lat, lon) {
+      let dentro = false;
+      const n = geoLat.length;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const intersecta =
+          ((geoLat[i] > lat) !== (geoLat[j] > lat)) &&
+          (lon < (geoLon[j] - geoLon[i]) * (lat - geoLat[i]) /
+                  (geoLat[j] - geoLat[i]) + geoLon[i]);
+        if (intersecta) dentro = !dentro;
+      }
+      return dentro;
+    }
+
+    // ==== FUNCIONES DE LOG ====
     function addLog(message, type = 'info') {
       const logContainer = document.getElementById('logContainer');
       const entry = document.createElement('div');
@@ -563,21 +623,17 @@
       logContainer.appendChild(entry);
       logContainer.scrollTop = logContainer.scrollHeight;
       
-      // Limitar a 100 entradas
       while (logContainer.children.length > 100) {
         logContainer.removeChild(logContainer.firstChild);
       }
     }
 
-    // ====
-    // EVENTOS MQTT
-    // ====
+    // ==== EVENTOS MQTT ====
     client.on('connect', () => {
       console.log("✅ Conectado a HiveMQ Cloud");
       document.getElementById('connectionDot').className = 'connection-dot connected';
       document.getElementById('connectionText').textContent = 'Conectado';
       
-      // Suscribirse a todos los topics
       Object.values(TOPICS).forEach(topic => {
         client.subscribe(topic);
       });
@@ -609,25 +665,25 @@
         case TOPICS.geocerca:
           handleGeocercaUpdate(msg);
           break;
+        case TOPICS.pc_geocerca:
+          // opcional: recibir geocerca de otra PC
+          break;
       }
     });
 
-    // ====
-    // HANDLERS DE MENSAJES
-    // ====
+    // ==== HANDLERS DE MENSAJES ====
     function handleGPSUpdate(msg) {
       try {
         const parts = msg.split('|');
         const coords = parts[0].split(',');
         robotState.lat = parseFloat(coords[0]);
         robotState.lon = parseFloat(coords[1]);
-        
+        robotState.lastGpsTime = Date.now();
+
         document.getElementById('gpsCoords').textContent = 
           `${robotState.lat.toFixed(6)}, ${robotState.lon.toFixed(6)}`;
         
-        addLog(`GPS actualizado: ${robotState.lat.toFixed(6)}, ${robotState.lon.toFixed(6)}`);
-        
-        // Actualizar ubicación actual
+        addLog(`GPS robot: ${robotState.lat.toFixed(6)}, ${robotState.lon.toFixed(6)}`);
         updateCurrentLocation();
       } catch (e) {
         addLog('Error parseando GPS: ' + e.message, 'error');
@@ -657,13 +713,10 @@
       }
     }
 
-    // ====
-    // ACTUALIZAR UI
-    // ====
+    // ==== ACTUALIZAR UI ====
     function updateRobotStatus(status) {
       robotState.status = status;
       const badge = document.getElementById('robotStatus');
-      
       badge.className = 'status-badge';
       
       switch(status) {
@@ -692,7 +745,6 @@
     }
 
     function updateCurrentLocation() {
-      // Determinar ubicación aproximada basada en coordenadas
       if (!robotState.lat || !robotState.lon) return;
       
       const locations = {
@@ -705,7 +757,7 @@
       
       for (let [key, loc] of Object.entries(locations)) {
         const dist = calculateDistance(robotState.lat, robotState.lon, loc.lat, loc.lon);
-        if (dist < minDist && dist < 50) { // Dentro de 50 metros
+        if (dist < minDist && dist < 50) {
           minDist = dist;
           nearest = loc.name;
         }
@@ -726,9 +778,80 @@
       }
     }
 
-    // ====
-    // FUNCIONES DE CONTROL
-    // ====
+    function actualizarFallbackUI() {
+      const badge = document.getElementById('fallbackMode');
+      if (fallbackActivo) {
+        badge.textContent = '⚠️ Modo: FALLBACK PC';
+        badge.className = 'fallback-ind fallback-on';
+      } else {
+        badge.textContent = 'Modo: Robot';
+        badge.className = 'fallback-ind fallback-off';
+      }
+    }
+
+    // ==== FALLBACK PC ====
+
+    // Revisa cada 3 s si hace mucho que no llega GPS del robot
+    setInterval(() => {
+      const ahora = Date.now();
+      const diff = ahora - robotState.lastGpsTime;
+
+      if (diff > FALLBACK_TIMEOUT_MS && !fallbackActivo) {
+        // Activar fallback PC
+        fallbackActivo = true;
+        actualizarFallbackUI();
+        addLog('⚠️ Activando fallback desde la PC (sin GPS del robot)', 'warning');
+        client.publish(TOPICS.pc_fallback, 'ON');
+      }
+
+      if (diff <= FALLBACK_TIMEOUT_MS && fallbackActivo) {
+        // Desactivar fallback
+        fallbackActivo = false;
+        actualizarFallbackUI();
+        addLog('✅ Desactivando fallback PC (robot volvió)', 'info');
+        client.publish(TOPICS.pc_fallback, 'OFF');
+      }
+    }, 3000);
+
+    // Obtener GPS de la PC periódicamente para fallback
+    function iniciarGPS_PC() {
+      if (!navigator.geolocation) {
+        addLog('Geolocalización no soportada por el navegador', 'error');
+        return;
+      }
+
+      setInterval(() => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            pcLocation = {
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude
+            };
+            document.getElementById('pcGpsCoords').textContent =
+              `${pcLocation.lat.toFixed(6)}, ${pcLocation.lon.toFixed(6)}`;
+
+            // Si estamos en modo fallback, evaluamos geocerca con la ubicación de la PC
+            if (fallbackActivo && pcLocation) {
+              const dentro = puntoEnPoligono(pcLocation.lat, pcLocation.lon);
+              const estadoGeo = dentro ? 'DENTRO' : 'FUERA';
+              addLog(`PC (${pcLocation.lat.toFixed(6)}, ${pcLocation.lon.toFixed(6)}) -> Geocerca: ${estadoGeo}`);
+              client.publish(TOPICS.pc_gps, `${pcLocation.lat},${pcLocation.lon}`);
+              client.publish(TOPICS.pc_geocerca, estadoGeo);
+            }
+          },
+          (err) => {
+            addLog('Error de geolocalización PC: ' + err.message, 'error');
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      }, 5000);
+    }
+
+    // ==== FUNCIONES DE CONTROL ====
     function sendCommand(cmd) {
       if (robotState.busy && cmd !== 'QUIETO') {
         addLog('Robot ocupado, comando ignorado', 'warning');
@@ -758,7 +881,6 @@
         return;
       }
       
-      // Enviar comando de navegación
       client.publish(TOPICS.navigation, `NAVEGAR_${dest.toUpperCase()}`);
       
       document.getElementById('destination').textContent = destName;
@@ -774,7 +896,6 @@
         return;
       }
       
-      // Obtener ubicación del usuario
       if (!navigator.geolocation) {
         alert('Tu navegador no soporta geolocalización');
         return;
@@ -789,7 +910,6 @@
             lon: position.coords.longitude
           };
           
-          // Verificar si está en zona segura (campus)
           if (!isInSafeZone(userLocation.lat, userLocation.lon)) {
             alert('⚠️ Estás fuera de la zona segura del campus. El robot no puede ir a tu ubicación.');
             document.getElementById('callStatus').textContent = '❌ Fuera de zona segura';
@@ -797,7 +917,6 @@
             return;
           }
           
-          // Enviar ubicación al robot
           const locationMsg = `${userLocation.lat},${userLocation.lon}`;
           client.publish(TOPICS.navigation, `VENIR_A:${locationMsg}`);
           
@@ -828,26 +947,23 @@
       }
     }
 
-    // ====
-    // FUNCIONES AUXILIARES
-    // ====
+    // ==== FUNCIONES AUXILIARES ====
     function calculateDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371000; // Radio de la Tierra en metros
+      const R = 6371000;
       const φ1 = lat1 * Math.PI / 180;
       const φ2 = lat2 * Math.PI / 180;
       const Δφ = (lat2 - lat1) * Math.PI / 180;
       const Δλ = (lon2 - lon1) * Math.PI / 180;
 
       const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ/2) * Math.sin(Δλ/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
       return R * c;
     }
 
     function isInSafeZone(lat, lon) {
-      // Geocerca del ITESM Querétaro (polígono simplificado)
       const bounds = {
         minLat: 20.612,
         maxLat: 20.615,
@@ -856,15 +972,14 @@
       };
       
       return lat >= bounds.minLat && lat <= bounds.maxLat &&
-             lon >= bounds.minLon && lon <= bounds.maxLon;
+        lon >= bounds.minLon && lon <= bounds.maxLon;
     }
 
-    // ====
-    // INICIALIZACIÓN
-    // ====
+    // ==== INICIALIZACIÓN ====
     window.onload = () => {
       addLog('Sistema web iniciado');
       addLog('Esperando conexión con el robot...');
+      iniciarGPS_PC();
     };
   </script>
 </body>
