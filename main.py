@@ -1,4 +1,5 @@
 # Asistente TEC Optimizado - 3 modos: Manos, Voz, Teclado
+# USA SOLO CÁMARA NORMAL (WEBCAM) - NO KINECT
 
 import os
 import warnings
@@ -20,9 +21,9 @@ DetectorFactory.seed = 0
 import speech_recognition as sr
 import unicodedata
 
-# =========================================================
-#                  UTILIDAD LIMPIAR TEXTO
-# =========================================================
+# ====
+#    UTILIDAD LIMPIAR TEXTO
+# ====
 def clean_text(s):
     """Quita acentos, tildes y ñ/Ñ"""
     s = s.replace("ñ", "n").replace("Ñ", "N")
@@ -30,12 +31,12 @@ def clean_text(s):
     return "".join(c for c in s if not unicodedata.combining(c))
 
 
-# =========================================================
-#                 CONFIG DE PANTALLA Y UI
-# =========================================================
+# ====
+#    CONFIG DE PANTALLA Y UI
+# ====
 WIN_W, WIN_H = 1920, 1080
 CONSOLE_H = int(WIN_H * 0.30)  
-CAM_H = WIN_H - CONSOLE_H      
+CAM_H = WIN_H - CONSOLE_H    
 
 WHITE = (255, 255, 255)
 TEC_BLUE = (0, 51, 160)
@@ -47,6 +48,7 @@ last_console_len = 0
 
 
 def add_log(src, msg):
+    """Añade línea al log de consola"""
     line = f"[{clean_text(src)}] {clean_text(msg)}"
     console_lines.append(line)
     print(line)
@@ -55,13 +57,14 @@ def add_log(src, msg):
         console_lines.append("")
 
 
-# =========================================================
-#                 MODELO DE SENAS
-# =========================================================
+# ====
+#    MODELO DE SENAS
+# ====
 model = None
 classes = None
 
 def load_sign_model():
+    """Carga modelo de reconocimiento de señas"""
     global model, classes
     model_file = "model.joblib" if os.path.exists("model.joblib") else "model.p"
     if not os.path.exists(model_file):
@@ -76,8 +79,8 @@ def load_sign_model():
         else:
             with open(model_file, "rb") as f:
                 data = pickle.load(f)
-                model = data["model"]
-                classes = model.classes_
+            model = data["model"]
+            classes = model.classes_
 
         # Reemplazar alfabeto por uno sin ñ
         letters = [chr(65 + i) for i in range(26)]
@@ -90,12 +93,13 @@ def load_sign_model():
 load_sign_model()
 
 
-# =========================================================
-#                TRADUCCION Y TTS
-# =========================================================
+# ====
+#    TRADUCCION Y TTS
+# ====
 translator = Translator()
 
 def decir(texto):
+    """Text-to-speech"""
     texto = clean_text(texto)
     if not texto.strip():
         return
@@ -108,6 +112,7 @@ def decir(texto):
         pass
 
 def auto_translate(frase):
+    """Detecta idioma y traduce a español si es necesario"""
     frase = clean_text(frase.strip())
     if not frase:
         return
@@ -129,9 +134,9 @@ def auto_translate(frase):
         add_log("TRAD", f"Error: {e}")
 
 
-# =========================================================
-#                MICROFONO Y WAKEWORD
-# =========================================================
+# ====
+#    MICROFONO Y WAKEWORD
+# ====
 voice_events = qmod.Queue()
 voice_active = False
 current_voice_phrase = ""
@@ -139,6 +144,7 @@ current_mode = "manos"  # manos, voz, teclado
 
 
 def detect_mic_index():
+    """Detecta índice del micrófono Realtek o predeterminado"""
     mics = sr.Microphone.list_microphone_names()
     for i, n in enumerate(mics):
         if "realtek" in n.lower() or "predet" in n.lower():
@@ -180,6 +186,7 @@ def mic_callback(recognizer, audio):
 
 
 def start_mic_background():
+    """Inicia reconocimiento de voz en segundo plano"""
     try:
         rec = sr.Recognizer()
         rec.energy_threshold = 300  # Sensibilidad del micrófono
@@ -199,9 +206,9 @@ def start_mic_background():
         add_log("VOZ", f"Error iniciando microfono: {e}")
 
 
-# =========================================================
-#                 ESTADO DE SENAS
-# =========================================================
+# ====
+#    ESTADO DE SENAS
+# ====
 current_sign_word = ""
 last_letter = "?"
 last_conf = 0.0
@@ -219,10 +226,11 @@ MIRROR_LANDMARKS = True
 current_text_keyboard = ""
 
 
-# =========================================================
-#                    UI (sin PIL)
-# =========================================================
+# ====
+#    UI (sin PIL)
+# ====
 def put_text(img, text, x, y, scale=0.8, color=(255,255,255), thickness=2):
+    """Dibuja texto en imagen"""
     text = clean_text(text)
     cv2.putText(img, text, (int(x), int(y)),
                 cv2.FONT_HERSHEY_SIMPLEX,
@@ -230,6 +238,7 @@ def put_text(img, text, x, y, scale=0.8, color=(255,255,255), thickness=2):
 
 
 def draw_console(img):
+    """Dibuja consola de logs en la parte inferior"""
     global console_offset, last_console_len
 
     cv2.rectangle(img, (0, CAM_H), (WIN_W, WIN_H), (0, 0, 0), -1)
@@ -261,6 +270,7 @@ def draw_console(img):
 
 
 def place_cam(frame, canvas):
+    """Coloca frame de cámara centrado en canvas"""
     h, w, _ = frame.shape
     scale = min(WIN_W / w, CAM_H / h)
     nw, nh = int(w * scale), int(h * scale)
@@ -273,9 +283,43 @@ def place_cam(frame, canvas):
     return canvas, xo
 
 
-# =========================================================
-#                        LOOP PRINCIPAL
-# =========================================================
+# ====
+#    DETECCIÓN DE CÁMARA CORRECTA
+# ====
+def detect_webcam_index():
+    """
+    Detecta el índice de la webcam normal (NO Kinect).
+    Prueba índices 0, 1, 2 y devuelve el primero que funcione.
+    Si tienes el Kinect como cámara 0, tu webcam probablemente sea 1 o 2.
+    """
+    add_log("SISTEMA", "Detectando camara correcta...")
+    
+    for i in range(5):
+        cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
+        if cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                # Verificar que no sea Kinect (Kinect suele ser 640x480)
+                h, w = frame.shape[:2]
+                cap.release()
+                
+                add_log("SISTEMA", f"Camara {i}: {w}x{h}")
+                
+                # Si es mayor a 640x480, probablemente es webcam normal
+                if w > 640 or h > 480:
+                    add_log("SISTEMA", f"Usando camara {i} (webcam normal)")
+                    return i
+            else:
+                cap.release()
+    
+    # Si no encuentra ninguna mejor, usa 0
+    add_log("SISTEMA", "Usando camara 0 por defecto")
+    return 0
+
+
+# ====
+#    LOOP PRINCIPAL
+# ====
 def main():
     global current_sign_word, last_letter, last_conf, last_valid
     global last_det, voice_active, current_voice_phrase, console_offset
@@ -292,16 +336,26 @@ def main():
     )
     mpDraw = mp.solutions.drawing_utils
 
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH,1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
+    # ====
+    # 🎥 ABRIR CÁMARA NORMAL (NO KINECT)
+    # ====
+    cam_index = detect_webcam_index()
+    cap = cv2.VideoCapture(cam_index, cv2.CAP_DSHOW)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+    if not cap.isOpened():
+        add_log("ERROR", f"No se pudo abrir camara {cam_index}")
+        return
 
     add_log("SISTEMA", "Asistente TEC optimizado iniciado.")
     add_log("SISTEMA", "Modo inicial: MANOS")
+    add_log("SISTEMA", "Usando CAMARA NORMAL (no Kinect)")
 
     while True:
         ret, frame = cap.read()
         if not ret:
+            add_log("ERROR", "No se pudo leer frame de camara")
             break
 
         if ENABLE_FLIP:
@@ -309,9 +363,9 @@ def main():
 
         status = "Sin mano"
 
-        # ===========================
-        #      PROCESADO DE SENAS (solo en modo manos)
-        # ===========================
+        # ====
+        #    PROCESADO DE SENAS (solo en modo manos)
+        # ====
         if model is not None and current_mode == "manos":
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = hands.process(rgb)
@@ -322,7 +376,7 @@ def main():
                     pred_buffer.clear()
 
                 for handLms, handedness in zip(results.multi_hand_landmarks,
-                                               results.multi_handedness):
+                                                results.multi_handedness):
 
                     label = handedness.classification[0].label
                     if ENABLE_FLIP:
@@ -363,8 +417,8 @@ def main():
                             if not current_sign_word or current_sign_word[-1] != last_letter:
                                 current_sign_word += last_letter
                                 add_log("SENAS", f"Parcial: {current_sign_word}")
-                        else:
-                            status = "Procesando gesto..."
+                    else:
+                        status = "Procesando gesto..."
 
                     mpDraw.draw_landmarks(frame, handLms, mpHands.HAND_CONNECTIONS)
 
@@ -373,9 +427,9 @@ def main():
                     last_letter = "?"
 
 
-        # ===========================
-        #      PROCESADO DE VOZ
-        # ===========================
+        # ====
+        #    PROCESADO DE VOZ
+        # ====
         while not voice_events.empty():
             t, text = voice_events.get()
             text = clean_text(text)
@@ -385,9 +439,9 @@ def main():
                 add_log("VOZ", f"Parcial: {current_voice_phrase}")
 
 
-        # ===========================
-        #         DIBUJAR UI
-        # ===========================
+        # ====
+        #    DIBUJAR UI
+        # ====
         canvas = np.zeros((WIN_H, WIN_W, 3), dtype=np.uint8)
         canvas, xo = place_cam(frame, canvas)
 
