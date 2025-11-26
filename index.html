@@ -1,566 +1,1032 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Robot TEC - Navegación Inteligente</title>
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Autónomo TEC | Sistema de Navegación Inteligente</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+        :root {
+            --tec-azul: #0033A0;
+            --tec-amarillo: #D6DE23;
+            --tec-negro: #000000;
+            --tec-blanco: #FFFFFF;
+            --tec-azul-claro: #00ADEF;
+            --tec-naranja: #F26A21;
+            --tec-gris: #6B7280;
+            --tec-gris-claro: #F3F4F6;
+        }
 
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      padding: 20px;
-    }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, var(--tec-azul) 0%, #001f5c 100%);
+            min-height: 100vh;
+            padding: 0;
+            color: var(--tec-negro);
+        }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+        /* Header TEC */
+        .header-tec {
+            background: var(--tec-blanco);
+            padding: 20px 40px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--tec-azul);
+        }
 
-    h1 {
-      color: white;
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 2.5em;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
 
-    .dashboard {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 20px;
-      margin-bottom: 20px;
-    }
+        .tec-logo {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--tec-azul);
+            letter-spacing: -1px;
+        }
 
-    .card {
-      background: white;
-      border-radius: 15px;
-      padding: 25px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
+        .project-title {
+            border-left: 3px solid var(--tec-naranja);
+            padding-left: 15px;
+        }
 
-    .card h2 {
-      color: #667eea;
-      margin-bottom: 20px;
-      font-size: 1.5em;
-      border-bottom: 3px solid #667eea;
-      padding-bottom: 10px;
-    }
+        .project-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--tec-azul);
+            margin-bottom: 2px;
+        }
 
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 10px;
-      margin-bottom: 15px;
-    }
+        .project-title p {
+            font-size: 12px;
+            color: var(--tec-gris);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-    .status-dot {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background-color: gray;
-      animation: pulse 2s infinite;
-    }
+        .header-status {
+            display: flex;
+            gap: 10px;
+        }
 
-    .status-dot.connected {
-      background-color: #4CAF50;
-    }
+        /* Container principal */
+        .main-container {
+            max-width: 1600px;
+            margin: 30px auto;
+            padding: 0 30px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
 
-    .status-dot.busy {
-      background-color: #FF9800;
-    }
+        /* Paneles */
+        .panel {
+            background: var(--tec-blanco);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border-top: 5px solid var(--tec-azul);
+        }
 
-    .status-dot.error {
-      background-color: #f44336;
-    }
+        .panel-full {
+            grid-column: 1 / -1;
+        }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--tec-gris-claro);
+        }
 
-    .status-text {
-      flex: 1;
-      font-weight: bold;
-      color: #333;
-    }
+        .panel-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--tec-azul);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    .nav-button {
-      width: 100%;
-      padding: 18px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 10px;
-      font-size: 1.1em;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
+        .panel-subtitle {
+            font-size: 12px;
+            color: var(--tec-gris);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-    .nav-button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
+        /* Status badges */
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    .nav-button:active {
-      transform: translateY(0);
-    }
+        .status-badge.online {
+            background: #10B981;
+            color: white;
+        }
 
-    .nav-button.tim {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
+        .status-badge.offline {
+            background: #EF4444;
+            color: white;
+        }
 
-    .nav-button.biblioteca {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    }
+        .status-badge.warning {
+            background: var(--tec-naranja);
+            color: white;
+        }
 
-    .nav-button.help {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    }
+        .status-badge.info {
+            background: var(--tec-azul-claro);
+            color: white;
+        }
 
-    .nav-button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
+        /* Status grid */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
 
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-    }
+        .status-card {
+            background: var(--tec-gris-claro);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--tec-azul);
+            transition: all 0.3s;
+        }
 
-    .info-row:last-child {
-      border-bottom: none;
-    }
+        .status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
 
-    .info-label {
-      font-weight: bold;
-      color: #666;
-    }
+        .status-card.active {
+            border-left-color: #10B981;
+            background: #ECFDF5;
+        }
 
-    .info-value {
-      color: #333;
-    }
+        .status-card.error {
+            border-left-color: #EF4444;
+            background: #FEF2F2;
+        }
 
-    .queue-list {
-      list-style: none;
-      padding: 0;
-    }
+        .status-card.warning {
+            border-left-color: var(--tec-naranja);
+            background: #FFF7ED;
+        }
 
-    .queue-item {
-      padding: 12px;
-      margin: 8px 0;
-      background: #f8f9fa;
-      border-left: 4px solid #667eea;
-      border-radius: 5px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+        .status-label {
+            font-size: 11px;
+            color: var(--tec-gris);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
 
-    .queue-item.active {
-      background: #e3f2fd;
-      border-left-color: #4CAF50;
-      font-weight: bold;
-    }
+        .status-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--tec-azul);
+        }
 
-    .manual-control {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 15px;
-    }
+        /* Botones de navegación */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
 
-    .manual-btn {
-      padding: 15px;
-      border: none;
-      border-radius: 8px;
-      background: #667eea;
-      color: white;
-      font-size: 1.2em;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+        .nav-button {
+            background: var(--tec-azul);
+            color: white;
+            border: none;
+            padding: 25px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Montserrat', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-    .manual-btn:hover {
-      background: #764ba2;
-    }
+        .nav-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 51, 160, 0.3);
+        }
 
-    .manual-btn:active {
-      transform: scale(0.95);
-    }
+        .nav-button:active {
+            transform: translateY(0);
+        }
 
-    .manual-btn.stop {
-      background: #f44336;
-      grid-column: 2;
-    }
+        .nav-button.primary {
+            background: var(--tec-azul);
+        }
 
-    .alert-box {
-      padding: 15px;
-      border-radius: 10px;
-      margin: 10px 0;
-      font-weight: bold;
-    }
+        .nav-button.secondary {
+            background: var(--tec-azul-claro);
+        }
 
-    .alert-box.warning {
-      background: #fff3cd;
-      color: #856404;
-      border: 2px solid #ffc107;
-    }
+        .nav-button.accent {
+            background: var(--tec-naranja);
+        }
 
-    .alert-box.danger {
-      background: #f8d7da;
-      color: #721c24;
-      border: 2px solid #f44336;
-    }
+        .nav-button.stop {
+            background: #EF4444;
+            grid-column: 1 / -1;
+        }
 
-    .alert-box.success {
-      background: #d4edda;
-      color: #155724;
-      border: 2px solid #4CAF50;
-    }
+        .nav-button-icon {
+            font-size: 32px;
+        }
 
-    .geocerca-status {
-      text-align: center;
-      padding: 20px;
-      border-radius: 10px;
-      font-size: 1.2em;
-      font-weight: bold;
-      margin: 15px 0;
-    }
+        .nav-button-text {
+            font-size: 14px;
+        }
 
-    .geocerca-status.inside {
-      background: #d4edda;
-      color: #155724;
-    }
+        /* Control pad */
+        .control-container {
+            max-width: 350px;
+            margin: 0 auto;
+        }
 
-    .geocerca-status.outside {
-      background: #f8d7da;
-      color: #721c24;
-    }
-  </style>
+        .control-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 10px;
+            font-size: 28px;
+            cursor: pointer;
+            background: var(--tec-azul);
+            color: white;
+            transition: all 0.2s;
+            font-weight: 700;
+            box-shadow: 0 4px 8px rgba(0, 51, 160, 0.2);
+        }
+
+        .control-btn:hover {
+            background: #002080;
+            transform: scale(1.05);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .control-btn.empty {
+            background: transparent;
+            box-shadow: none;
+            cursor: default;
+        }
+
+        .control-btn.empty:hover {
+            transform: none;
+        }
+
+        .control-btn.stop {
+            background: #EF4444;
+        }
+
+        .control-btn.stop:hover {
+            background: #DC2626;
+        }
+
+        .control-info {
+            text-align: center;
+            font-size: 12px;
+            color: var(--tec-gris);
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--tec-gris-claro);
+            border-radius: 8px;
+        }
+
+        /* Terminal */
+        .terminal-container {
+            background: var(--tec-negro);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .terminal-header {
+            background: #1a1a1a;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--tec-azul);
+        }
+
+        .terminal-title {
+            color: var(--tec-blanco);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .terminal-clear {
+            background: var(--tec-naranja);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .terminal-clear:hover {
+            background: #D85A1A;
+        }
+
+        .terminal-body {
+            padding: 20px;
+            height: 350px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #00FF00;
+        }
+
+        .terminal-line {
+            margin-bottom: 6px;
+            word-wrap: break-word;
+        }
+
+        .terminal-line.success {
+            color: #10B981;
+        }
+
+        .terminal-line.error {
+            color: #EF4444;
+        }
+
+        .terminal-line.warning {
+            color: var(--tec-naranja);
+        }
+
+        .terminal-line.info {
+            color: var(--tec-azul-claro);
+        }
+
+        .terminal-line.system {
+            color: var(--tec-amarillo);
+        }
+
+        /* Cola de tareas */
+        .queue-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            background: var(--tec-gris-claro);
+            padding: 18px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border-left: 4px solid var(--tec-azul);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .queue-item:hover {
+            transform: translateX(5px);
+        }
+
+        .queue-item.active {
+            background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+            border-left-color: var(--tec-azul-claro);
+        }
+
+        .queue-item-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .queue-icon {
+            font-size: 24px;
+        }
+
+        .queue-text {
+            font-weight: 600;
+            color: var(--tec-azul);
+        }
+
+        .queue-status {
+            font-size: 11px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            background: var(--tec-azul);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .queue-empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--tec-gris);
+            font-style: italic;
+        }
+
+        /* GPS Info */
+        .gps-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .gps-card {
+            background: linear-gradient(135deg, var(--tec-azul-claro) 0%, #0095D1 100%);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .gps-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            opacity: 0.9;
+            font-weight: 600;
+        }
+
+        .gps-value {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Scrollbar personalizado */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--tec-gris-claro);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--tec-azul);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #002080;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-tec {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .logo-section {
+                flex-direction: column;
+            }
+
+            .project-title {
+                border-left: none;
+                border-top: 3px solid var(--tec-naranja);
+                padding-left: 0;
+                padding-top: 15px;
+            }
+
+            .nav-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animaciones */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Footer TEC */
+        .footer-tec {
+            background: var(--tec-blanco);
+            padding: 20px;
+            text-align: center;
+            margin-top: 30px;
+            border-top: 4px solid var(--tec-azul);
+        }
+
+        .footer-tec p {
+            color: var(--tec-gris);
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .footer-tec strong {
+            color: var(--tec-azul);
+            font-weight: 700;
+        }
+    </style>
 </head>
-
 <body>
-  <div class="container">
-    <h1>🤖 Robot TEC - Sistema de Navegación</h1>
+    <!-- Header TEC -->
+    <header class="header-tec">
+        <div class="logo-section">
+            <div class="tec-logo">TEC</div>
+            <div class="project-title">
+                <h1>Robot Autónomo de Navegación</h1>
+                <p>Sistema Inteligente de Asistencia y Guía</p>
+            </div>
+        </div>
+        <div class="header-status">
+            <span class="status-badge offline" id="header-mqtt">
+                ● MQTT
+            </span>
+            <span class="status-badge offline" id="header-robot">
+                ● Sistema
+            </span>
+        </div>
+    </header>
 
-    <div class="dashboard">
-      <!-- ESTADO DEL ROBOT -->
-      <div class="card">
-        <h2>📊 Estado del Robot</h2>
-
-        <div class="status-indicator">
-          <div class="status-dot" id="connectionDot"></div>
-          <div class="status-text" id="connectionStatus">Conectando...</div>
+    <!-- Container principal -->
+    <div class="main-container">
+        <!-- Panel de estado del sistema -->
+        <div class="panel panel-full">
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">Estado del Sistema</div>
+                    <div class="panel-subtitle">Monitoreo en tiempo real</div>
+                </div>
+            </div>
+            <div class="status-grid">
+                <div class="status-card" id="card-mqtt">
+                    <div class="status-label">Conexión MQTT</div>
+                    <div class="status-value" id="status-mqtt">Desconectado</div>
+                </div>
+                <div class="status-card" id="card-robot">
+                    <div class="status-label">Estado del Robot</div>
+                    <div class="status-value" id="status-robot">Inicializando...</div>
+                </div>
+                <div class="status-card" id="card-gps">
+                    <div class="status-label">Sistema GPS</div>
+                    <div class="status-value" id="status-gps">Sin señal</div>
+                </div>
+                <div class="status-card" id="card-geocerca">
+                    <div class="status-label">Geocerca</div>
+                    <div class="status-value" id="status-geocerca">Verificando...</div>
+                </div>
+            </div>
         </div>
 
-        <div class="info-row">
-          <span class="info-label">Estado:</span>
-          <span class="info-value" id="robotStatus">Desconocido</span>
+        <!-- Panel de navegación -->
+        <div class="panel">
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">🗺️ Navegación Autónoma</div>
+                    <div class="panel-subtitle">Destinos predefinidos</div>
+                </div>
+            </div>
+            <div class="nav-grid">
+                <button class="nav-button primary" onclick="navegarA('timhortons')">
+                    <div class="nav-button-icon">☕</div>
+                    <div class="nav-button-text">Tim Hortons</div>
+                </button>
+                <button class="nav-button primary" onclick="navegarA('biblioteca')">
+                    <div class="nav-button-icon">📚</div>
+                    <div class="nav-button-text">Biblioteca</div>
+                </button>
+                <button class="nav-button secondary" onclick="navegarAUsuario()">
+                    <div class="nav-button-icon">📍</div>
+                    <div class="nav-button-text">Ir a mi ubicación</div>
+                </button>
+                <button class="nav-button accent" onclick="ayudaEmergencia()">
+                    <div class="nav-button-icon">🆘</div>
+                    <div class="nav-button-text">Solicitar ayuda</div>
+                </button>
+            </div>
+            <button class="nav-button stop" onclick="detenerTodo()">
+                <div class="nav-button-icon">🛑</div>
+                <div class="nav-button-text">Detener sistema</div>
+            </button>
         </div>
 
-        <div class="info-row">
-          <span class="info-label">Ubicación:</span>
-          <span class="info-value" id="robotGPS">Sin GPS</span>
+        <!-- Panel de control manual -->
+        <div class="panel">
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">🎮 Control Manual</div>
+                    <div class="panel-subtitle">Operación directa</div>
+                </div>
+            </div>
+            <div class="control-container">
+                <div class="control-pad">
+                    <div class="control-btn empty"></div>
+                    <button class="control-btn" onclick="moverManual('ADELANTE')" title="Avanzar">
+                        ▲
+                    </button>
+                    <div class="control-btn empty"></div>
+
+                    <button class="control-btn" onclick="moverManual('IZQUIERDA')" title="Girar izquierda">
+                        ◄
+                    </button>
+                    <button class="control-btn stop" onclick="moverManual('STOP')" title="Detener">
+                        ■
+                    </button>
+                    <button class="control-btn" onclick="moverManual('DERECHA')" title="Girar derecha">
+                        ►
+                    </button>
+
+                    <div class="control-btn empty"></div>
+                    <button class="control-btn" onclick="moverManual('ATRAS')" title="Retroceder">
+                        ▼
+                    </button>
+                    <div class="control-btn empty"></div>
+                </div>
+                <div class="control-info">
+                    El control manual cancela la navegación automática
+                </div>
+            </div>
         </div>
 
-        <div class="info-row">
-          <span class="info-label">Batería:</span>
-          <span class="info-value" id="robotBattery">--</span>
+        <!-- Panel de información GPS -->
+        <div class="panel">
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">📍 Ubicación GPS</div>
+                    <div class="panel-subtitle">Coordenadas actuales</div>
+                </div>
+            </div>
+            <div class="gps-grid">
+                <div class="gps-card">
+                    <div class="gps-label">Latitud</div>
+                    <div class="gps-value" id="gps-lat">--</div>
+                </div>
+                <div class="gps-card">
+                    <div class="gps-label">Longitud</div>
+                    <div class="gps-value" id="gps-lon">--</div>
+                </div>
+            </div>
         </div>
 
-        <div class="geocerca-status inside" id="geocercaStatus">
-          🟢 Dentro de zona segura
+        <!-- Panel de cola de tareas -->
+        <div class="panel">
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">📋 Cola de Tareas</div>
+                    <div class="panel-subtitle">Tareas pendientes</div>
+                </div>
+            </div>
+            <div class="queue-container" id="queue-container">
+                <div class="queue-empty">No hay tareas en cola</div>
+            </div>
         </div>
 
-        <div id="obstacleAlert" style="display: none;" class="alert-box danger">
-          ⚠️ OBSTÁCULO DETECTADO
+        <!-- Panel de terminal -->
+        <div class="panel panel-full">
+            <div class="terminal-container">
+                <div class="terminal-header">
+                    <div class="terminal-title">💻 Terminal del Sistema</div>
+                    <button class="terminal-clear" onclick="limpiarTerminal()">
+                        Limpiar
+                    </button>
+                </div>
+                <div class="terminal-body" id="terminal"></div>
+            </div>
         </div>
-      </div>
-
-      <!-- NAVEGACIÓN -->
-      <div class="card">
-        <h2>🗺️ Navegación</h2>
-
-        <button class="nav-button tim" id="btnTimHortons">
-          ☕ Ir a Tim Hortons
-        </button>
-
-        <button class="nav-button biblioteca" id="btnBiblioteca">
-          📚 Ir a Biblioteca
-        </button>
-
-        <button class="nav-button help" id="btnHelp">
-          🆘 Ven a mi ubicación
-        </button>
-
-        <div class="alert-box warning" id="busyWarning" style="display: none;">
-          Robot ocupado. Tarea agregada a la cola.
-        </div>
-      </div>
-
-      <!-- COLA DE TAREAS -->
-      <div class="card">
-        <h2>📋 Cola de Tareas</h2>
-        <ul class="queue-list" id="taskQueue">
-          <li style="text-align: center; color: #999; padding: 20px;">
-            Sin tareas pendientes
-          </li>
-        </ul>
-      </div>
-
-      <!-- CONTROL MANUAL -->
-      <div class="card">
-        <h2>🎮 Control Manual (Emergencia)</h2>
-
-        <div class="manual-control">
-          <div></div>
-          <button class="manual-btn" id="btnForward">⬆️</button>
-          <div></div>
-
-          <button class="manual-btn" id="btnLeft">⬅️</button>
-          <button class="manual-btn stop" id="btnStop">⏹️</button>
-          <button class="manual-btn" id="btnRight">➡️</button>
-
-          <div></div>
-          <button class="manual-btn" id="btnBackward">⬇️</button>
-          <div></div>
-        </div>
-
-        <div class="alert-box warning" style="margin-top: 15px;">
-          ⚠️ Solo usar en emergencias. Cancela navegación automática.
-        </div>
-      </div>
     </div>
-  </div>
 
-  <script>
-    // ====
-    // CONFIGURACIÓN MQTT
-    // ====
-    const broker = 'wss://958d6cbfe5ce4f0581776ff12f2049b4.s1.eu.hivemq.cloud:8884/mqtt';
-    const options = {
-      username: "Omarkings",
-      password: "567129Aa",
-      connectTimeout: 4000,
-      reconnectPeriod: 3000
-    };
+    <!-- Footer TEC -->
+    <footer class="footer-tec">
+        <p>
+            <strong>Tecnológico de Monterrey</strong> | Campus Santa Fe | 
+            Proyecto de Robótica Autónoma | 2024
+        </p>
+    </footer>
 
-    const client = mqtt.connect(broker, options);
+    <script>
+        // ====================================================================
+        // CONFIGURACIÓN MQTT
+        // ====================================================================
+        const MQTT_BROKER = 'wss://958d6cbfe5ce4f0581776ff12f2049b4.s1.eu.hivemq.cloud:8884/mqtt';
+        const MQTT_USER = 'Omarkings';
+        const MQTT_PASS = '567129Aa';
 
-    // Topics
-    const TOPIC_NAVIGATION = "omar/robot/navigation";
-    const TOPIC_MANUAL = "omar/manual/accion";
-    const TOPIC_ESTADO = "omar/robot/estado";
-    const TOPIC_GPS = "omar/robot/gps";
-    const TOPIC_QUEUE = "omar/robot/queue";
-    const TOPIC_GEOCERCA = "omar/robot/geocerca";
-    const TOPIC_OBSTACLE = "omar/robot/obstacle";
+        const TOPICS = {
+            navigation: 'omar/robot/navigation',
+            manual: 'omar/manual/accion',
+            estado: 'omar/robot/estado',
+            gps: 'omar/robot/gps',
+            geocerca: 'omar/robot/geocerca',
+            queue: 'omar/robot/queue',
+            obstacle: 'omar/robot/obstacle'
+        };
 
-    // Estado local
-    let robotBusy = false;
-    let taskQueue = [];
+        let client = null;
 
-    // ====
-    // CONEXIÓN MQTT
-    // ====
-    client.on('connect', () => {
-      console.log("✅ Conectado a HiveMQ Cloud");
-      updateConnectionStatus(true);
+        // ====================================================================
+        // CONEXIÓN MQTT
+        // ====================================================================
+        function conectarMQTT() {
+            addLog('Iniciando conexión con servidor MQTT...', 'system');
 
-      // Suscribirse a todos los topics
-      client.subscribe(TOPIC_ESTADO);
-      client.subscribe(TOPIC_GPS);
-      client.subscribe(TOPIC_QUEUE);
-      client.subscribe(TOPIC_GEOCERCA);
-      client.subscribe(TOPIC_OBSTACLE);
-    });
+            client = mqtt.connect(MQTT_BROKER, {
+                username: MQTT_USER,
+                password: MQTT_PASS,
+                clientId: 'TEC_WebInterface_' + Math.random().toString(16).substr(2, 8)
+            });
 
-    client.on('error', (error) => {
-      console.error("❌ Error de conexión:", error);
-      updateConnectionStatus(false);
-    });
+            client.on('connect', () => {
+                addLog('✓ Conexión MQTT establecida correctamente', 'success');
+                updateHeaderStatus('header-mqtt', 'online', '● MQTT');
+                updateStatusCard('card-mqtt', 'active', 'status-mqtt', 'Conectado');
 
-    client.on('message', (topic, message) => {
-      const payload = message.toString();
-      console.log(`📨 ${topic}: ${payload}`);
+                Object.values(TOPICS).forEach(topic => {
+                    client.subscribe(topic, (err) => {
+                        if (!err) {
+                            addLog(`Suscrito al topic: ${topic}`, 'info');
+                        }
+                    });
+                });
+            });
 
-      if (topic === TOPIC_ESTADO) {
-        handleEstado(payload);
-      } else if (topic === TOPIC_GPS) {
-        handleGPS(payload);
-      } else if (topic === TOPIC_QUEUE) {
-        handleQueue(payload);
-      } else if (topic === TOPIC_GEOCERCA) {
-        handleGeocerca(payload);
-      } else if (topic === TOPIC_OBSTACLE) {
-        handleObstacle(payload);
-      }
-    });
+            client.on('message', (topic, message) => {
+                const msg = message.toString();
+                manejarMensajeMQTT(topic, msg);
+            });
 
-    // ====
-    // HANDLERS
-    // ====
-    function handleEstado(payload) {
-      const statusEl = document.getElementById('robotStatus');
-      statusEl.textContent = payload;
+            client.on('error', (error) => {
+                addLog('✗ Error en conexión MQTT: ' + error.message, 'error');
+                updateHeaderStatus('header-mqtt', 'offline', '● MQTT');
+                updateStatusCard('card-mqtt', 'error', 'status-mqtt', 'Error');
+            });
 
-      // Determinar si está ocupado
-      robotBusy = payload.includes('Navegando') || payload.includes('Ocupado');
+            client.on('close', () => {
+                addLog('Conexión MQTT cerrada. Reintentando...', 'warning');
+                updateHeaderStatus('header-mqtt', 'offline', '● MQTT');
+                updateStatusCard('card-mqtt', 'warning', 'status-mqtt', 'Desconectado');
+            });
+        }
 
-      const dot = document.getElementById('connectionDot');
-      if (robotBusy) {
-        dot.className = 'status-dot busy';
-      } else {
-        dot.className = 'status-dot connected';
-      }
-    }
+        // ====================================================================
+        // MANEJO DE MENSAJES MQTT
+        // ====================================================================
+        function manejarMensajeMQTT(topic, msg) {
+            if (topic === TOPICS.estado) {
+                addLog(`Robot: ${msg}`, 'info');
+                updateHeaderStatus('header-robot', 'online', '● Sistema');
+                updateStatusCard('card-robot', 'active', 'status-robot', msg.replace('estado: ', ''));
+            }
+            else if (topic === TOPICS.gps) {
+                const [lat, lon] = msg.split(',');
+                document.getElementById('gps-lat').textContent = parseFloat(lat).toFixed(6);
+                document.getElementById('gps-lon').textContent = parseFloat(lon).toFixed(6);
+                updateStatusCard('card-gps', 'active', 'status-gps', 'Señal activa');
+            }
+            else if (topic === TOPICS.geocerca) {
+                if (msg === 'DENTRO') {
+                    updateStatusCard('card-geocerca', 'active', 'status-geocerca', 'Dentro del área');
+                } else {
+                    updateStatusCard('card-geocerca', 'error', 'status-geocerca', 'Fuera del área');
+                    addLog('⚠ ALERTA: Robot fuera de la geocerca', 'error');
+                }
+            }
+            else if (topic === TOPICS.queue) {
+                try {
+                    const queue = JSON.parse(msg);
+                    actualizarCola(queue);
+                } catch (e) {
+                    console.error('Error parseando cola:', e);
+                }
+            }
+            else if (topic === TOPICS.obstacle) {
+                if (msg === 'DETECTADO') {
+                    addLog('⚠ Obstáculo detectado - Sistema detenido', 'warning');
+                } else if (msg === 'DESPEJADO') {
+                    addLog('✓ Obstáculo despejado - Reanudando operación', 'success');
+                }
+            }
+        }
 
-    function handleGPS(payload) {
-      document.getElementById('robotGPS').textContent = payload;
-    }
+        // ====================================================================
+        // FUNCIONES DE NAVEGACIÓN
+        // ====================================================================
+        function navegarA(destino) {
+            if (!verificarConexion()) return;
 
-    function handleQueue(payload) {
-      try {
-        taskQueue = JSON.parse(payload);
-        updateQueueDisplay();
-      } catch (e) {
-        console.error("Error parseando cola:", e);
-      }
-    }
+            const comando = `NAVEGAR_${destino}`;
+            client.publish(TOPICS.navigation, comando);
+            addLog(`→ Comando de navegación enviado: ${destino.toUpperCase()}`, 'success');
+        }
 
-    function handleGeocerca(payload) {
-      const geocercaEl = document.getElementById('geocercaStatus');
+        function navegarAUsuario() {
+            if (!verificarConexion()) return;
 
-      if (payload.includes('DENTRO') || payload.includes('INSIDE')) {
-        geocercaEl.className = 'geocerca-status inside';
-        geocercaEl.innerHTML = '🟢 Dentro de zona segura';
-      } else {
-        geocercaEl.className = 'geocerca-status outside';
-        geocercaEl.innerHTML = '🔴 Fuera de zona segura';
-      }
-    }
+            if (navigator.geolocation) {
+                addLog('Obteniendo ubicación del usuario...', 'info');
 
-    function handleObstacle(payload) {
-      const alertEl = document.getElementById('obstacleAlert');
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
 
-      if (payload.includes('DETECTADO') || payload.includes('TRUE')) {
-        alertEl.style.display = 'block';
-        setTimeout(() => {
-          alertEl.style.display = 'none';
-        }, 5000);
-      }
-    }
+                        const comando = `NAVEGAR_GPS:${lat},${lon}`;
+                        client.publish(TOPICS.navigation, comando);
+                        addLog(`→ Navegando a ubicación del usuario: ${lat.toFixed(6)}, ${lon.toFixed(6)}`, 'success');
+                    },
+                    (error) => {
+                        addLog('✗ Error obteniendo ubicación: ' + error.message, 'error');
+                        alert('No se pudo obtener tu ubicación. Verifica los permisos del navegador.');
+                    }
+                );
+            } else {
+                addLog('✗ Geolocalización no soportada por el navegador', 'error');
+                alert('Tu navegador no soporta geolocalización.');
+            }
+        }
 
-    function updateConnectionStatus(connected) {
-      const statusEl = document.getElementById('connectionStatus');
-      const dot = document.getElementById('connectionDot');
+        function ayudaEmergencia() {
+            if (!verificarConexion()) return;
 
-      if (connected) {
-        statusEl.textContent = 'Conectado ✅';
-        dot.className = 'status-dot connected';
-      } else {
-        statusEl.textContent = 'Desconectado ❌';
-        dot.className = 'status-dot error';
-      }
-    }
+            if (confirm('¿Deseas solicitar ayuda? El robot se dirigirá a tu ubicación.')) {
+                navegarAUsuario();
+                addLog('🆘 Solicitud de ayuda activada', 'warning');
+            }
+        }
 
-    function updateQueueDisplay() {
-      const queueEl = document.getElementById('taskQueue');
+        function detenerTodo() {
+            if (!verificarConexion()) return;
 
-      if (taskQueue.length === 0) {
-        queueEl.innerHTML = '<li style="text-align: center; color: #999; padding: 20px;">Sin tareas pendientes</li>';
-        return;
-      }
+            client.publish(TOPICS.manual, 'STOP');
+            addLog('■ Sistema detenido - Cola de tareas limpiada', 'warning');
+        }
 
-      queueEl.innerHTML = taskQueue.map((task, index) => {
-        const isActive = index === 0;
-        return `
-          <li class="queue-item ${isActive ? 'active' : ''}">
-            <span>${isActive ? '▶️' : '⏸️'} ${task}</span>
-            <span>${isActive ? 'En progreso' : 'En espera'}</span>
-          </li>
-        `;
-      }).join('');
-    }
+        // ====================================================================
+        // CONTROL MANUAL
+        // ====================================================================
+        function moverManual(direccion) {
+            if (!verificarConexion()) return;
 
-    // ====
-    // FUNCIONES DE NAVEGACIÓN
-    // ====
-    function sendNavigation(destination) {
-      client.publish(TOPIC_NAVIGATION, destination);
-      console.log(`📤 Navegación: ${destination}`);
+            client.publish(TOPICS.manual, direccion);
+            addLog(`Control manual: ${direccion}`, 'info');
+        }
 
-      if (robotBusy) {
-        showBusyWarning();
-      }
-    }
+        // ====================================================================
+        // ACTUALIZAR COLA DE TAREAS
+        // ====================================================================
+        function actualizarCola(queue) {
+            const container = document.getElementById('queue-container');
 
-    function sendManualCommand(command) {
-      client.publish(TOPIC_MANUAL, command);
-      console.log(`📤 Comando manual: ${command}`);
-    }
+            if (queue.length === 0) {
+                container.innerHTML = '<div class="queue-empty">No hay tareas en cola</div>';
+                return;
+            }
 
-    function showBusyWarning() {
-      const warning = document.getElementById('busyWarning');
-      warning.style.display = 'block';
-      setTimeout(() => {
-        warning.style.display = 'none';
-      }, 3000);
-    }
+            container.innerHTML = '';
+            queue.forEach((tarea, index) => {
+                const item = document.createElement('div');
+                item.className = 'queue-item' + (index === 0 ? ' active' : '');
+                item.innerHTML = `
+                    <div class="queue-item-content">
+                        <div class="queue-icon">${index === 0 ? '▶' : '⏸'}</div>
+                        <div class="queue-text">${tarea}</div>
+                    </div>
+                    <div class="queue-status">${index === 0 ? 'En proceso' : 'Posición ' + (index + 1)}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
 
-    // ====
-    // EVENT LISTENERS
-    // ====
-    document.getElementById('btnTimHortons').onclick = () => {
-      sendNavigation('NAVEGAR_timhortons');
-    };
+        // ====================================================================
+        // FUNCIONES DE UI
+        // ====================================================================
+        function updateHeaderStatus(elementId, status, text) {
+            const element = document.getElementById(elementId);
+            element.className = 'status-badge ' + status;
+            element.textContent = text;
+        }
 
-    document.getElementById('btnBiblioteca').onclick = () => {
-      sendNavigation('NAVEGAR_biblioteca');
-    };
+        function updateStatusCard(cardId, status, valueId, text) {
+            const card = document.getElementById(cardId);
+            const value = document.getElementById(valueId);
 
-    document.getElementById('btnHelp').onclick = () => {
-      // Obtener ubicación del usuario
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          sendNavigation(`NAVEGAR_GPS:${lat},${lon}`);
-        }, (error) => {
-          alert('No se pudo obtener tu ubicación. Verifica los permisos.');
-          console.error(error);
+            card.className = 'status-card ' + status;
+            value.textContent = text;
+        }
+
+        function addLog(message, type = 'info') {
+            const terminal = document.getElementById('terminal');
+            const line = document.createElement('div');
+            line.className = 'terminal-line ' + type;
+
+            const timestamp = new Date().toLocaleTimeString('es-MX', { hour12: false });
+            line.textContent = `[${timestamp}] ${message}`;
+
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+
+            while (terminal.children.length > 150) {
+                terminal.removeChild(terminal.firstChild);
+            }
+        }
+
+        function limpiarTerminal() {
+            document.getElementById('terminal').innerHTML = '';
+            addLog('Terminal limpiada', 'system');
+        }
+
+        function verificarConexion() {
+            if (!client || !client.connected) {
+                addLog('✗ Error: No hay conexión con el servidor MQTT', 'error');
+                alert('No conectado a MQTT. Espera un momento e intenta de nuevo.');
+                return false;
+            }
+            return true;
+        }
+
+        // ====================================================================
+        // INICIALIZACIÓN
+        // ====================================================================
+        window.addEventListener('load', () => {
+            addLog('═══════════════════════════════════════════════', 'system');
+            addLog('TECNOLÓGICO DE MONTERREY', 'system');
+            addLog('Sistema de Navegación Autónoma - Versión 2.0', 'system');
+            addLog('═══════════════════════════════════════════════', 'system');
+            conectarMQTT();
         });
-      } else {
-        alert('Tu navegador no soporta geolocalización.');
-      }
-    };
 
-    // Control manual
-    document.getElementById('btnForward').onclick = () => sendManualCommand('AVANZAR');
-    document.getElementById('btnBackward').onclick = () => sendManualCommand('RETROCEDER');
-    document.getElementById('btnLeft').onclick = () => sendManualCommand('IZQUIERDA');
-    document.getElementById('btnRight').onclick = () => sendManualCommand('DERECHA');
-    document.getElementById('btnStop').onclick = () => sendManualCommand('STOP');
-  </script>
+        setInterval(() => {
+            if (!client || !client.connected) {
+                conectarMQTT();
+            }
+        }, 5000);
+    </script>
 </body>
 </html>
