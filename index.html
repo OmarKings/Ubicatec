@@ -1,1032 +1,1033 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robot Autónomo TEC | Sistema de Navegación Inteligente</title>
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --tec-azul: #0033A0;
-            --tec-amarillo: #D6DE23;
-            --tec-negro: #000000;
-            --tec-blanco: #FFFFFF;
-            --tec-azul-claro: #00ADEF;
-            --tec-naranja: #F26A21;
-            --tec-gris: #6B7280;
-            --tec-gris-claro: #F3F4F6;
-        }
-
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(135deg, var(--tec-azul) 0%, #001f5c 100%);
-            min-height: 100vh;
-            padding: 0;
-            color: var(--tec-negro);
-        }
-
-        /* Header TEC */
-        .header-tec {
-            background: var(--tec-blanco);
-            padding: 20px 40px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 4px solid var(--tec-azul);
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .tec-logo {
-            font-size: 32px;
-            font-weight: 900;
-            color: var(--tec-azul);
-            letter-spacing: -1px;
-        }
-
-        .project-title {
-            border-left: 3px solid var(--tec-naranja);
-            padding-left: 15px;
-        }
-
-        .project-title h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--tec-azul);
-            margin-bottom: 2px;
-        }
-
-        .project-title p {
-            font-size: 12px;
-            color: var(--tec-gris);
-            font-weight: 400;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .header-status {
-            display: flex;
-            gap: 10px;
-        }
-
-        /* Container principal */
-        .main-container {
-            max-width: 1600px;
-            margin: 30px auto;
-            padding: 0 30px;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 25px;
-        }
-
-        /* Paneles */
-        .panel {
-            background: var(--tec-blanco);
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            border-top: 5px solid var(--tec-azul);
-        }
-
-        .panel-full {
-            grid-column: 1 / -1;
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--tec-gris-claro);
-        }
-
-        .panel-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--tec-azul);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .panel-subtitle {
-            font-size: 12px;
-            color: var(--tec-gris);
-            font-weight: 400;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Status badges */
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .status-badge.online {
-            background: #10B981;
-            color: white;
-        }
-
-        .status-badge.offline {
-            background: #EF4444;
-            color: white;
-        }
-
-        .status-badge.warning {
-            background: var(--tec-naranja);
-            color: white;
-        }
-
-        .status-badge.info {
-            background: var(--tec-azul-claro);
-            color: white;
-        }
-
-        /* Status grid */
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .status-card {
-            background: var(--tec-gris-claro);
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid var(--tec-azul);
-            transition: all 0.3s;
-        }
-
-        .status-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .status-card.active {
-            border-left-color: #10B981;
-            background: #ECFDF5;
-        }
-
-        .status-card.error {
-            border-left-color: #EF4444;
-            background: #FEF2F2;
-        }
-
-        .status-card.warning {
-            border-left-color: var(--tec-naranja);
-            background: #FFF7ED;
-        }
-
-        .status-label {
-            font-size: 11px;
-            color: var(--tec-gris);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .status-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--tec-azul);
-        }
-
-        /* Botones de navegación */
-        .nav-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .nav-button {
-            background: var(--tec-azul);
-            color: white;
-            border: none;
-            padding: 25px 20px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            font-family: 'Montserrat', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .nav-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 51, 160, 0.3);
-        }
-
-        .nav-button:active {
-            transform: translateY(0);
-        }
-
-        .nav-button.primary {
-            background: var(--tec-azul);
-        }
-
-        .nav-button.secondary {
-            background: var(--tec-azul-claro);
-        }
-
-        .nav-button.accent {
-            background: var(--tec-naranja);
-        }
-
-        .nav-button.stop {
-            background: #EF4444;
-            grid-column: 1 / -1;
-        }
-
-        .nav-button-icon {
-            font-size: 32px;
-        }
-
-        .nav-button-text {
-            font-size: 14px;
-        }
-
-        /* Control pad */
-        .control-container {
-            max-width: 350px;
-            margin: 0 auto;
-        }
-
-        .control-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .control-btn {
-            aspect-ratio: 1;
-            border: none;
-            border-radius: 10px;
-            font-size: 28px;
-            cursor: pointer;
-            background: var(--tec-azul);
-            color: white;
-            transition: all 0.2s;
-            font-weight: 700;
-            box-shadow: 0 4px 8px rgba(0, 51, 160, 0.2);
-        }
-
-        .control-btn:hover {
-            background: #002080;
-            transform: scale(1.05);
-        }
-
-        .control-btn:active {
-            transform: scale(0.95);
-        }
-
-        .control-btn.empty {
-            background: transparent;
-            box-shadow: none;
-            cursor: default;
-        }
-
-        .control-btn.empty:hover {
-            transform: none;
-        }
-
-        .control-btn.stop {
-            background: #EF4444;
-        }
-
-        .control-btn.stop:hover {
-            background: #DC2626;
-        }
-
-        .control-info {
-            text-align: center;
-            font-size: 12px;
-            color: var(--tec-gris);
-            margin-top: 15px;
-            padding: 12px;
-            background: var(--tec-gris-claro);
-            border-radius: 8px;
-        }
-
-        /* Terminal */
-        .terminal-container {
-            background: var(--tec-negro);
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
-        }
-
-        .terminal-header {
-            background: #1a1a1a;
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--tec-azul);
-        }
-
-        .terminal-title {
-            color: var(--tec-blanco);
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .terminal-clear {
-            background: var(--tec-naranja);
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 5px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.2s;
-        }
-
-        .terminal-clear:hover {
-            background: #D85A1A;
-        }
-
-        .terminal-body {
-            padding: 20px;
-            height: 350px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            color: #00FF00;
-        }
-
-        .terminal-line {
-            margin-bottom: 6px;
-            word-wrap: break-word;
-        }
-
-        .terminal-line.success {
-            color: #10B981;
-        }
-
-        .terminal-line.error {
-            color: #EF4444;
-        }
-
-        .terminal-line.warning {
-            color: var(--tec-naranja);
-        }
-
-        .terminal-line.info {
-            color: var(--tec-azul-claro);
-        }
-
-        .terminal-line.system {
-            color: var(--tec-amarillo);
-        }
-
-        /* Cola de tareas */
-        .queue-container {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .queue-item {
-            background: var(--tec-gris-claro);
-            padding: 18px;
-            margin-bottom: 12px;
-            border-radius: 8px;
-            border-left: 4px solid var(--tec-azul);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s;
-        }
-
-        .queue-item:hover {
-            transform: translateX(5px);
-        }
-
-        .queue-item.active {
-            background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
-            border-left-color: var(--tec-azul-claro);
-        }
-
-        .queue-item-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .queue-icon {
-            font-size: 24px;
-        }
-
-        .queue-text {
-            font-weight: 600;
-            color: var(--tec-azul);
-        }
-
-        .queue-status {
-            font-size: 11px;
-            padding: 6px 12px;
-            border-radius: 12px;
-            background: var(--tec-azul);
-            color: white;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .queue-empty {
-            text-align: center;
-            padding: 40px;
-            color: var(--tec-gris);
-            font-style: italic;
-        }
-
-        /* GPS Info */
-        .gps-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-
-        .gps-card {
-            background: linear-gradient(135deg, var(--tec-azul-claro) 0%, #0095D1 100%);
-            padding: 20px;
-            border-radius: 10px;
-            color: white;
-        }
-
-        .gps-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            opacity: 0.9;
-            font-weight: 600;
-        }
-
-        .gps-value {
-            font-size: 20px;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-        }
-
-        /* Scrollbar personalizado */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--tec-gris-claro);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--tec-azul);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #002080;
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .main-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header-tec {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-
-            .logo-section {
-                flex-direction: column;
-            }
-
-            .project-title {
-                border-left: none;
-                border-top: 3px solid var(--tec-naranja);
-                padding-left: 0;
-                padding-top: 15px;
-            }
-
-            .nav-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .status-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Animaciones */
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        /* Footer TEC */
-        .footer-tec {
-            background: var(--tec-blanco);
-            padding: 20px;
-            text-align: center;
-            margin-top: 30px;
-            border-top: 4px solid var(--tec-azul);
-        }
-
-        .footer-tec p {
-            color: var(--tec-gris);
-            font-size: 12px;
-            font-weight: 400;
-        }
-
-        .footer-tec strong {
-            color: var(--tec-azul);
-            font-weight: 700;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOOK-Y - Sistema de Control y Navegación</title>
+  
+  <!-- MQTT.js -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  
+  <!-- Leaflet para mapas -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0038a8 0%, #0051d5 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .status-bar {
+      background: #f8f9fa;
+      padding: 15px 30px;
+      border-bottom: 2px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #6c757d;
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.connected {
+      background: #28a745;
+    }
+
+    .status-indicator.error {
+      background: #dc3545;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 30px;
+    }
+
+    @media (max-width: 1024px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .panel h2 {
+      color: #0038a8;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+      border-bottom: 3px solid #0038a8;
+      padding-bottom: 10px;
+    }
+
+    /* MAPA */
+    #map {
+      height: 400px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* BOTONES */
+    .btn {
+      padding: 15px 30px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+      color: white;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+      color: white;
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+      color: white;
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+
+    /* GRID DE NAVEGACIÓN */
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .nav-btn {
+      padding: 20px;
+      font-size: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn .icon {
+      font-size: 2em;
+    }
+
+    /* CONTROL DE MOTORES */
+    .motor-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .motor-grid .btn {
+      padding: 20px;
+      font-size: 16px;
+    }
+
+    .motor-grid .empty {
+      background: transparent;
+    }
+
+    /* COLA DE TAREAS */
+    .task-queue {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .task-item {
+      background: #e9ecef;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .task-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .task-item .task-name {
+      font-weight: bold;
+      color: #0038a8;
+    }
+
+    .task-item .task-status {
+      font-size: 0.9em;
+      color: #6c757d;
+    }
+
+    .task-item.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .task-item.active .task-name,
+    .task-item.active .task-status {
+      color: white;
+    }
+
+    /* INFORMACIÓN GPS */
+    .gps-info {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+
+    .gps-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .gps-row:last-child {
+      border-bottom: none;
+    }
+
+    .gps-label {
+      font-weight: bold;
+      color: #495057;
+    }
+
+    .gps-value {
+      color: #0038a8;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* CONSOLA DE LOGS */
+    .console {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 10px;
+      padding: 15px;
+      height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .console-line {
+      margin-bottom: 5px;
+    }
+
+    .console-line.info {
+      color: #4fc3f7;
+    }
+
+    .console-line.success {
+      color: #81c784;
+    }
+
+    .console-line.warning {
+      color: #ffb74d;
+    }
+
+    .console-line.error {
+      color: #e57373;
+    }
+
+    .console-line .timestamp {
+      color: #9e9e9e;
+      margin-right: 10px;
+    }
+
+    /* CONTROLES LED */
+    .led-controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .led-controls .btn {
+      flex: 1;
+    }
+
+    /* ESTADÍSTICAS */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #0038a8;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      color: #6c757d;
+      font-size: 0.9em;
+    }
+
+    /* SCROLLBAR PERSONALIZADO */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* ANIMACIONES */
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .panel {
+      animation: slideIn 0.5s ease-out;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8em;
+      }
+
+      .status-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .nav-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .motor-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
-    <!-- Header TEC -->
-    <header class="header-tec">
-        <div class="logo-section">
-            <div class="tec-logo">TEC</div>
-            <div class="project-title">
-                <h1>Robot Autónomo de Navegación</h1>
-                <p>Sistema Inteligente de Asistencia y Guía</p>
-            </div>
-        </div>
-        <div class="header-status">
-            <span class="status-badge offline" id="header-mqtt">
-                ● MQTT
-            </span>
-            <span class="status-badge offline" id="header-robot">
-                ● Sistema
-            </span>
-        </div>
-    </header>
-
-    <!-- Container principal -->
-    <div class="main-container">
-        <!-- Panel de estado del sistema -->
-        <div class="panel panel-full">
-            <div class="panel-header">
-                <div>
-                    <div class="panel-title">Estado del Sistema</div>
-                    <div class="panel-subtitle">Monitoreo en tiempo real</div>
-                </div>
-            </div>
-            <div class="status-grid">
-                <div class="status-card" id="card-mqtt">
-                    <div class="status-label">Conexión MQTT</div>
-                    <div class="status-value" id="status-mqtt">Desconectado</div>
-                </div>
-                <div class="status-card" id="card-robot">
-                    <div class="status-label">Estado del Robot</div>
-                    <div class="status-value" id="status-robot">Inicializando...</div>
-                </div>
-                <div class="status-card" id="card-gps">
-                    <div class="status-label">Sistema GPS</div>
-                    <div class="status-value" id="status-gps">Sin señal</div>
-                </div>
-                <div class="status-card" id="card-geocerca">
-                    <div class="status-label">Geocerca</div>
-                    <div class="status-value" id="status-geocerca">Verificando...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Panel de navegación -->
-        <div class="panel">
-            <div class="panel-header">
-                <div>
-                    <div class="panel-title">🗺️ Navegación Autónoma</div>
-                    <div class="panel-subtitle">Destinos predefinidos</div>
-                </div>
-            </div>
-            <div class="nav-grid">
-                <button class="nav-button primary" onclick="navegarA('timhortons')">
-                    <div class="nav-button-icon">☕</div>
-                    <div class="nav-button-text">Tim Hortons</div>
-                </button>
-                <button class="nav-button primary" onclick="navegarA('biblioteca')">
-                    <div class="nav-button-icon">📚</div>
-                    <div class="nav-button-text">Biblioteca</div>
-                </button>
-                <button class="nav-button secondary" onclick="navegarAUsuario()">
-                    <div class="nav-button-icon">📍</div>
-                    <div class="nav-button-text">Ir a mi ubicación</div>
-                </button>
-                <button class="nav-button accent" onclick="ayudaEmergencia()">
-                    <div class="nav-button-icon">🆘</div>
-                    <div class="nav-button-text">Solicitar ayuda</div>
-                </button>
-            </div>
-            <button class="nav-button stop" onclick="detenerTodo()">
-                <div class="nav-button-icon">🛑</div>
-                <div class="nav-button-text">Detener sistema</div>
-            </button>
-        </div>
-
-        <!-- Panel de control manual -->
-        <div class="panel">
-            <div class="panel-header">
-                <div>
-                    <div class="panel-title">🎮 Control Manual</div>
-                    <div class="panel-subtitle">Operación directa (1 click)</div>
-                </div>
-            </div>
-            <div class="control-container">
-                <div class="control-pad">
-                    <div class="control-btn empty"></div>
-                    <button class="control-btn" onclick="moverManual('ADELANTE')" title="Avanzar">
-                        ▲
-                    </button>
-                    <div class="control-btn empty"></div>
-
-                    <button class="control-btn" onclick="moverManual('IZQUIERDA')" title="Girar izquierda">
-                        ◄
-                    </button>
-                    <button class="control-btn stop" onclick="moverManual('STOP')" title="Detener">
-                        ■
-                    </button>
-                    <button class="control-btn" onclick="moverManual('DERECHA')" title="Girar derecha">
-                        ►
-                    </button>
-
-                    <div class="control-btn empty"></div>
-                    <button class="control-btn" onclick="moverManual('ATRAS')" title="Retroceder">
-                        ▼
-                    </button>
-                    <div class="control-btn empty"></div>
-                </div>
-                <div class="control-info">
-                    El control manual cancela la navegación automática
-                </div>
-            </div>
-        </div>
-
-        <!-- Panel de información GPS -->
-        <div class="panel">
-            <div class="panel-header">
-                <div>
-                    <div class="panel-title">📍 Ubicación GPS</div>
-                    <div class="panel-subtitle">Coordenadas actuales</div>
-                </div>
-            </div>
-            <div class="gps-grid">
-                <div class="gps-card">
-                    <div class="gps-label">Latitud</div>
-                    <div class="gps-value" id="gps-lat">--</div>
-                </div>
-                <div class="gps-card">
-                    <div class="gps-label">Longitud</div>
-                    <div class="gps-value" id="gps-lon">--</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Panel de cola de tareas -->
-        <div class="panel">
-            <div class="panel-header">
-                <div>
-                    <div class="panel-title">📋 Cola de Tareas</div>
-                    <div class="panel-subtitle">Tareas pendientes</div>
-                </div>
-            </div>
-            <div class="queue-container" id="queue-container">
-                <div class="queue-empty">No hay tareas en cola</div>
-            </div>
-        </div>
-
-        <!-- Panel de terminal -->
-        <div class="panel panel-full">
-            <div class="terminal-container">
-                <div class="terminal-header">
-                    <div class="terminal-title">💻 Terminal del Sistema</div>
-                    <button class="terminal-clear" onclick="limpiarTerminal()">
-                        Limpiar
-                    </button>
-                </div>
-                <div class="terminal-body" id="terminal"></div>
-            </div>
-        </div>
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <h1>🤖 LOOK-Y</h1>
+      <p>Sistema de Control y Navegación Autónoma</p>
     </div>
 
-    <!-- Footer TEC -->
-    <footer class="footer-tec">
-        <p>
-            <strong>Tecnológico de Monterrey</strong> | Campus Santa Queretaro | 
-            Proyecto de Robótica Autónoma | 2025
-        </p>
-    </footer>
+    <!-- BARRA DE ESTADO -->
+    <div class="status-bar">
+      <div class="status-item">
+        <div class="status-indicator" id="mqtt-indicator"></div>
+        <span id="mqtt-status">Conectando a MQTT...</span>
+      </div>
+      <div class="status-item">
+        <div class="status-indicator" id="robot-indicator"></div>
+        <span id="robot-status">Estado: Desconocido</span>
+      </div>
+      <div class="status-item">
+        <div class="status-indicator" id="gps-indicator"></div>
+        <span id="gps-status">GPS: Sin señal</span>
+      </div>
+      <div class="status-item">
+        <span id="geocerca-status">Geocerca: Verificando...</span>
+      </div>
+    </div>
 
-    <script>
-        // ====================================================================
-        // CONFIGURACIÓN MQTT
-        // ====================================================================
-        const MQTT_BROKER = 'wss://958d6cbfe5ce4f0581776ff12f2049b4.s1.eu.hivemq.cloud:8884/mqtt';
-        const MQTT_USER = 'Omarkings';
-        const MQTT_PASS = '567129Aa';
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+      <!-- PANEL IZQUIERDO: NAVEGACIÓN Y MAPA -->
+      <div class="panel">
+        <h2>🗺️ Navegación GPS</h2>
+        
+        <!-- MAPA -->
+        <div id="map"></div>
 
-        const TOPICS = {
-            navigation: 'omar/robot/navigation',
-            manual: 'omar/manual/accion',
-            estado: 'omar/robot/estado',
-            gps: 'omar/robot/gps',
-            geocerca: 'omar/robot/geocerca',
-            queue: 'omar/robot/queue',
-            obstacle: 'omar/robot/obstacle'
-        };
+        <!-- DESTINOS PREDEFINIDOS -->
+        <div class="nav-grid">
+          <button class="btn btn-primary nav-btn" onclick="navegarA('timhortons')">
+            <span class="icon">☕</span>
+            <span>Tim Hortons</span>
+          </button>
+          <button class="btn btn-primary nav-btn" onclick="navegarA('biblioteca')">
+            <span class="icon">📚</span>
+            <span>Biblioteca</span>
+          </button>
+          <button class="btn btn-primary nav-btn" onclick="navegarA('lafuente')">
+            <span class="icon">⛲</span>
+            <span>La Fuente</span>
+          </button>
+        </div>
 
-        let client = null;
+        <!-- BOTÓN CANCELAR RUTA -->
+        <button class="btn btn-danger" onclick="cancelarRuta()" style="width: 100%; margin-bottom: 20px;">
+          ❌ Cancelar Ruta
+        </button>
 
-        // ====================================================================
-        // CONEXIÓN MQTT
-        // ====================================================================
-        function conectarMQTT() {
-            addLog('Iniciando conexión con servidor MQTT...', 'system');
+        <!-- COLA DE TAREAS -->
+        <h3 style="color: #0038a8; margin-bottom: 10px;">📋 Cola de Tareas</h3>
+        <div class="task-queue" id="task-queue">
+          <p style="text-align: center; color: #6c757d;">No hay tareas pendientes</p>
+        </div>
 
-            client = mqtt.connect(MQTT_BROKER, {
-                username: MQTT_USER,
-                password: MQTT_PASS,
-                clientId: 'TEC_WebInterface_' + Math.random().toString(16).substr(2, 8)
-            });
+        <!-- INFORMACIÓN GPS -->
+        <div class="gps-info">
+          <div class="gps-row">
+            <span class="gps-label">Latitud:</span>
+            <span class="gps-value" id="gps-lat">--</span>
+          </div>
+          <div class="gps-row">
+            <span class="gps-label">Longitud:</span>
+            <span class="gps-value" id="gps-lon">--</span>
+          </div>
+          <div class="gps-row">
+            <span class="gps-label">Satélites:</span>
+            <span class="gps-value" id="gps-sats">--</span>
+          </div>
+          <div class="gps-row">
+            <span class="gps-label">Precisión:</span>
+            <span class="gps-value" id="gps-precision">--</span>
+          </div>
+        </div>
+      </div>
 
-            client.on('connect', () => {
-                addLog('✓ Conexión MQTT establecida correctamente', 'success');
-                updateHeaderStatus('header-mqtt', 'online', '● MQTT');
-                updateStatusCard('card-mqtt', 'active', 'status-mqtt', 'Conectado');
+      <!-- PANEL DERECHO: CONTROL MANUAL -->
+      <div class="panel">
+        <h2>🎮 Control Manual</h2>
 
-                Object.values(TOPICS).forEach(topic => {
-                    client.subscribe(topic, (err) => {
-                        if (!err) {
-                            addLog(`Suscrito al topic: ${topic}`, 'info');
-                        }
-                    });
-                });
-            });
+        <!-- CONTROL DE LED -->
+        <h3 style="color: #0038a8; margin-bottom: 10px;">💡 LED de Alerta</h3>
+        <div class="led-controls">
+          <button class="btn btn-success" onclick="enviarComando('led', 'ON')">
+            🟢 Encender LED
+          </button>
+          <button class="btn btn-danger" onclick="enviarComando('led', 'OFF')">
+            🔴 Apagar LED
+          </button>
+        </div>
 
-            client.on('message', (topic, message) => {
-                const msg = message.toString();
-                manejarMensajeMQTT(topic, msg);
-            });
+        <!-- CONTROL DE MOTORES -->
+        <h3 style="color: #0038a8; margin-bottom: 10px; margin-top: 30px;">⚙️ Control de Motores</h3>
+        <div class="motor-grid">
+          <div class="empty"></div>
+          <button class="btn btn-info" onclick="enviarComando('motor', 'ADELANTE')">
+            ⬆️ Adelante
+          </button>
+          <div class="empty"></div>
 
-            client.on('error', (error) => {
-                addLog('✗ Error en conexión MQTT: ' + error.message, 'error');
-                updateHeaderStatus('header-mqtt', 'offline', '● MQTT');
-                updateStatusCard('card-mqtt', 'error', 'status-mqtt', 'Error');
-            });
+          <button class="btn btn-info" onclick="enviarComando('motor', 'IZQUIERDA')">
+            ⬅️ Izquierda
+          </button>
+          <button class="btn btn-warning" onclick="enviarComando('motor', 'QUIETO')">
+            ⏹️ Stop
+          </button>
+          <button class="btn btn-info" onclick="enviarComando('motor', 'DERECHA')">
+            ➡️ Derecha
+          </button>
 
-            client.on('close', () => {
-                addLog('Conexión MQTT cerrada. Reintentando...', 'warning');
-                updateHeaderStatus('header-mqtt', 'offline', '● MQTT');
-                updateStatusCard('card-mqtt', 'warning', 'status-mqtt', 'Desconectado');
-            });
+          <div class="empty"></div>
+          <button class="btn btn-info" onclick="enviarComando('motor', 'ATRAS')">
+            ⬇️ Atrás
+          </button>
+          <div class="empty"></div>
+        </div>
+
+        <!-- ESTADÍSTICAS -->
+        <h3 style="color: #0038a8; margin-bottom: 10px; margin-top: 30px;">📊 Estadísticas</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-comandos">0</div>
+            <div class="stat-label">Comandos Enviados</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-distancia">0 m</div>
+            <div class="stat-label">Distancia al Destino</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-tiempo">00:00</div>
+            <div class="stat-label">Tiempo de Operación</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-tareas">0</div>
+            <div class="stat-label">Tareas Completadas</div>
+          </div>
+        </div>
+
+        <!-- CONSOLA DE LOGS -->
+        <h3 style="color: #0038a8; margin-bottom: 10px; margin-top: 30px;">📝 Consola de Logs</h3>
+        <div class="console" id="console"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT -->
+  <script>
+    // ====================================
+    // CONFIGURACIÓN MQTT
+    // ====================================
+    const MQTT_CONFIG = {
+      broker: 'wss://958d6cbfe5ce4f0581776ff12f2049b4.s1.eu.hivemq.cloud:8884/mqtt',
+      username: 'Omarkings',
+      password: '567129Aa',
+      options: {
+        connectTimeout: 4000,
+        reconnectPeriod: 3000,
+        keepalive: 60
+      }
+    };
+
+    const TOPICS = {
+      led: 'kinect/alerta_led',
+      motor: 'omar/manual/accion',
+      estado: 'omar/robot/estado',
+      gps: 'omar/robot/gps',
+      geocerca: 'omar/robot/geocerca',
+      navigation: 'omar/robot/navigation',
+      taskQueue: 'omar/robot/task_queue',
+      cancelRoute: 'omar/robot/cancel_route'
+    };
+
+    // ====================================
+    // VARIABLES GLOBALES
+    // ====================================
+    let mqttClient = null;
+    let map = null;
+    let robotMarker = null;
+    let destinoMarker = null;
+    let routeLine = null;
+    let comandosEnviados = 0;
+    let tareasCompletadas = 0;
+    let tiempoInicio = Date.now();
+    let currentPosition = null;
+    let currentDestination = null;
+    let taskQueue = [];
+
+    // Coordenadas de destinos
+    const DESTINOS = {
+      timhortons: { lat: 20.613500, lon: -100.403800, nombre: 'Tim Hortons' },
+      biblioteca: { lat: 20.613800, lon: -100.403500, nombre: 'Biblioteca' },
+      lafuente: { lat: 20.613200, lon: -100.403600, nombre: 'La Fuente' }
+    };
+
+    // Centro del campus (ITESM Querétaro)
+    const CAMPUS_CENTER = { lat: 20.613500, lon: -100.403600 };
+
+    // ====================================
+    // INICIALIZACIÓN
+    // ====================================
+    window.onload = function() {
+      initMap();
+      initMQTT();
+      initTimers();
+      addLog('Sistema iniciado correctamente', 'success');
+    };
+
+    // ====================================
+    // MAPA
+    // ====================================
+    function initMap() {
+      // Crear mapa centrado en el campus
+      map = L.map('map').setView([CAMPUS_CENTER.lat, CAMPUS_CENTER.lon], 17);
+
+      // Añadir capa de OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      // Marcador del robot (azul)
+      robotMarker = L.marker([CAMPUS_CENTER.lat, CAMPUS_CENTER.lon], {
+        icon: L.icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        })
+      }).addTo(map);
+      robotMarker.bindPopup('<b>🤖 LOOK-Y</b><br>Posición actual');
+
+      // Añadir marcadores de destinos
+      Object.keys(DESTINOS).forEach(key => {
+        const dest = DESTINOS[key];
+        L.marker([dest.lat, dest.lon], {
+          icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+        }).addTo(map).bindPopup(`<b>${dest.nombre}</b>`);
+      });
+
+      addLog('Mapa inicializado', 'info');
+    }
+
+    function updateRobotPosition(lat, lon) {
+      if (robotMarker && map) {
+        robotMarker.setLatLng([lat, lon]);
+        currentPosition = { lat, lon };
+        
+        // Actualizar línea de ruta si hay destino
+        if (currentDestination) {
+          updateRouteLine();
+          updateDistancia();
         }
+      }
+    }
 
-        // ====================================================================
-        // MANEJO DE MENSAJES MQTT
-        // ====================================================================
-        function manejarMensajeMQTT(topic, msg) {
-            if (topic === TOPICS.estado) {
-                addLog(`Robot: ${msg}`, 'info');
-                updateHeaderStatus('header-robot', 'online', '● Sistema');
-                updateStatusCard('card-robot', 'active', 'status-robot', msg.replace('estado: ', ''));
-            }
-            else if (topic === TOPICS.gps) {
-                const [lat, lon] = msg.split(',');
-                document.getElementById('gps-lat').textContent = parseFloat(lat).toFixed(6);
-                document.getElementById('gps-lon').textContent = parseFloat(lon).toFixed(6);
-                updateStatusCard('card-gps', 'active', 'status-gps', 'Señal activa');
-            }
-            else if (topic === TOPICS.geocerca) {
-                if (msg === 'DENTRO') {
-                    updateStatusCard('card-geocerca', 'active', 'status-geocerca', 'Dentro del área');
-                } else {
-                    updateStatusCard('card-geocerca', 'error', 'status-geocerca', 'Fuera del área');
-                    addLog('⚠ ALERTA: Robot fuera de la geocerca', 'error');
-                }
-            }
-            else if (topic === TOPICS.queue) {
-                try {
-                    const queue = JSON.parse(msg);
-                    actualizarCola(queue);
-                } catch (e) {
-                    console.error('Error parseando cola:', e);
-                }
-            }
-            else if (topic === TOPICS.obstacle) {
-                if (msg === 'DETECTADO') {
-                    addLog('⚠ Obstáculo detectado - Sistema detenido', 'warning');
-                } else if (msg === 'DESPEJADO') {
-                    addLog('✓ Obstáculo despejado - Reanudando operación', 'success');
-                }
-            }
-        }
+    function setDestination(destKey) {
+      const dest = DESTINOS[destKey];
+      if (!dest) return;
 
-        // ====================================================================
-        // FUNCIONES DE NAVEGACIÓN
-        // ====================================================================
-        function navegarA(destino) {
-            if (!verificarConexion()) return;
+      currentDestination = dest;
 
-            const comando = `NAVEGAR_${destino}`;
-            client.publish(TOPICS.navigation, comando);
-            addLog(`→ Comando de navegación enviado: ${destino.toUpperCase()}`, 'success');
-        }
+      // Crear o actualizar marcador de destino (rojo)
+      if (destinoMarker) {
+        destinoMarker.setLatLng([dest.lat, dest.lon]);
+      } else {
+        destinoMarker = L.marker([dest.lat, dest.lon], {
+          icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+          })
+        }).addTo(map);
+      }
+      destinoMarker.bindPopup(`<b>🎯 Destino: ${dest.nombre}</b>`);
 
-        function navegarAUsuario() {
-            if (!verificarConexion()) return;
+      updateRouteLine();
+      addLog(`Destino establecido: ${dest.nombre}`, 'success');
+    }
 
-            if (navigator.geolocation) {
-                addLog('Obteniendo ubicación del usuario...', 'info');
+    function updateRouteLine() {
+      if (!currentPosition || !currentDestination) return;
 
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
+      // Eliminar línea anterior
+      if (routeLine) {
+        map.removeLayer(routeLine);
+      }
 
-                        const comando = `NAVEGAR_GPS:${lat},${lon}`;
-                        client.publish(TOPICS.navigation, comando);
-                        addLog(`→ Navegando a ubicación del usuario: ${lat.toFixed(6)}, ${lon.toFixed(6)}`, 'success');
-                    },
-                    (error) => {
-                        addLog('✗ Error obteniendo ubicación: ' + error.message, 'error');
-                        alert('No se pudo obtener tu ubicación. Verifica los permisos del navegador.');
-                    }
-                );
-            } else {
-                addLog('✗ Geolocalización no soportada por el navegador', 'error');
-                alert('Tu navegador no soporta geolocalización.');
-            }
-        }
+      // Crear nueva línea
+      routeLine = L.polyline([
+        [currentPosition.lat, currentPosition.lon],
+        [currentDestination.lat, currentDestination.lon]
+      ], {
+        color: '#0038a8',
+        weight: 3,
+        opacity: 0.7,
+        dashArray: '10, 10'
+      }).addTo(map);
+    }
 
-        function ayudaEmergencia() {
-            if (!verificarConexion()) return;
+    function updateDistancia() {
+      if (!currentPosition || !currentDestination) return;
 
-            if (confirm('¿Deseas solicitar ayuda? El robot se dirigirá a tu ubicación.')) {
-                navegarAUsuario();
-                addLog('🆘 Solicitud de ayuda activada', 'warning');
-            }
-        }
+      const dist = calcularDistancia(
+        currentPosition.lat, currentPosition.lon,
+        currentDestination.lat, currentDestination.lon
+      );
 
-        function detenerTodo() {
-            if (!verificarConexion()) return;
+      document.getElementById('stat-distancia').textContent = dist.toFixed(1) + ' m';
+    }
 
-            client.publish(TOPICS.manual, 'STOP');
-            addLog('■ Sistema detenido - Cola de tareas limpiada', 'warning');
-        }
+    function calcularDistancia(lat1, lon1, lat2, lon2) {
+      const R = 6371000; // Radio de la Tierra en metros
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
 
-        // ====================================================================
-        // CONTROL MANUAL
-        // ====================================================================
-        function moverManual(direccion) {
-            if (!verificarConexion()) return;
-
-            client.publish(TOPICS.manual, direccion);
-            addLog(`Control manual: ${direccion}`, 'info');
-        }
-
-        // ====================================================================
-        // ACTUALIZAR COLA DE TAREAS
-        // ====================================================================
-        function actualizarCola(queue) {
-            const container = document.getElementById('queue-container');
-
-            if (queue.length === 0) {
-                container.innerHTML = '<div class="queue-empty">No hay tareas en cola</div>';
-                return;
-            }
-
-            container.innerHTML = '';
-            queue.forEach((tarea, index) => {
-                const item = document.createElement('div');
-                item.className = 'queue-item' + (index === 0 ? ' active' : '');
-                item.innerHTML = `
-                    <div class="queue-item-content">
-                        <div class="queue-icon">${index === 0 ? '▶' : '⏸'}</div>
-                        <div class="queue-text">${tarea}</div>
-                    </div>
-                    <div class="queue-status">${index === 0 ? 'En proceso' : 'Posición ' + (index + 1)}</div>
-                `;
-                container.appendChild(item);
-            });
-        }
-
-        // ====================================================================
-        // FUNCIONES DE UI
-        // ====================================================================
-        function updateHeaderStatus(elementId, status, text) {
-            const element = document.getElementById(elementId);
-            element.className = 'status-badge ' + status;
-            element.textContent = text;
-        }
-
-        function updateStatusCard(cardId, status, valueId, text) {
-            const card = document.getElementById(cardId);
-            const value = document.getElementById(valueId);
-
-            card.className = 'status-card ' + status;
-            value.textContent = text;
-        }
-
-        function addLog(message, type = 'info') {
-            const terminal = document.getElementById('terminal');
-            const line = document.createElement('div');
-            line.className = 'terminal-line ' + type;
-
-            const timestamp = new Date().toLocaleTimeString('es-MX', { hour12: false });
-            line.textContent = `[${timestamp}] ${message}`;
-
-            terminal.appendChild(line);
-            terminal.scrollTop = terminal.scrollHeight;
-
-            while (terminal.children.length > 150) {
-                terminal.removeChild(terminal.firstChild);
-            }
-        }
-
-        function limpiarTerminal() {
-            document.getElementById('terminal').innerHTML = '';
-            addLog('Terminal limpiada', 'system');
-        }
-
-        function verificarConexion() {
-            if (!client || !client.connected) {
-                addLog('✗ Error: No hay conexión con el servidor MQTT', 'error');
-                alert('No conectado a MQTT. Espera un momento e intenta de nuevo.');
-                return false;
-            }
-            return true;
-        }
-
-        // ====================================================================
-        // INICIALIZACIÓN
-        // ====================================================================
-        window.addEventListener('load', () => {
-            addLog('═══════════════════════════════════════════════', 'system');
-            addLog('TECNOLÓGICO DE MONTERREY', 'system');
-            addLog('Sistema de Navegación Autónoma - Versión 2.0', 'system');
-            addLog('═══════════════════════════════════════════════', 'system');
-            conectarMQTT();
+    // ====================================
+    // MQTT
+    // ====================================
+    function initMQTT() {
+      try {
+        mqttClient = mqtt.connect(MQTT_CONFIG.broker, {
+          username: MQTT_CONFIG.username,
+          password: MQTT_CONFIG.password,
+          ...MQTT_CONFIG.options
         });
 
-        setInterval(() => {
-            if (!client || !client.connected) {
-                conectarMQTT();
-            }
-        }, 5000);
-    </script>
+        mqttClient.on('connect', onMQTTConnect);
+        mqttClient.on('error', onMQTTError);
+        mqttClient.on('message', onMQTTMessage);
+        mqttClient.on('reconnect', () => {
+          addLog('Reconectando a MQTT...', 'warning');
+          updateStatus('mqtt', 'Reconectando...', 'warning');
+        });
+        mqttClient.on('offline', () => {
+          addLog('MQTT desconectado', 'error');
+          updateStatus('mqtt', 'Desconectado', 'error');
+        });
+
+      } catch (error) {
+        addLog('Error al inicializar MQTT: ' + error.message, 'error');
+        updateStatus('mqtt', 'Error de conexión', 'error');
+      }
+    }
+
+    function onMQTTConnect() {
+      addLog('Conectado a HiveMQ Cloud', 'success');
+      updateStatus('mqtt', 'Conectado', 'connected');
+
+      // Suscribirse a topics
+      mqttClient.subscribe(TOPICS.estado);
+      mqttClient.subscribe(TOPICS.gps);
+      mqttClient.subscribe(TOPICS.geocerca);
+      mqttClient.subscribe(TOPICS.taskQueue);
+
+      addLog('Suscrito a topics del robot', 'info');
+    }
+
+    function onMQTTError(error) {
+      addLog('Error MQTT: ' + error.message, 'error');
+      updateStatus('mqtt', 'Error: ' + error.message, 'error');
+    }
+
+    function onMQTTMessage(topic, message) {
+      const payload = message.toString();
+
+      try {
+        if (topic === TOPICS.estado) {
+          handleEstadoMessage(payload);
+        } else if (topic === TOPICS.gps) {
+          handleGPSMessage(payload);
+        } else if (topic === TOPICS.geocerca) {
+          handleGeocercaMessage(payload);
+        } else if (topic === TOPICS.taskQueue) {
+          handleTaskQueueMessage(payload);
+        }
+      } catch (error) {
+        addLog('Error procesando mensaje: ' + error.message, 'error');
+      }
+    }
+
+    function handleEstadoMessage(payload) {
+      const estado = payload.replace('estado: ', '');
+      updateStatus('robot', 'Estado: ' + estado, 'connected');
+      addLog('Robot: ' + estado, 'info');
+    }
+
+    function handleGPSMessage(payload) {
+      try {
+        const data = JSON.parse(payload);
+        
+        if (data.valido) {
+          document.getElementById('gps-lat').textContent = data.lat.toFixed(6);
+          document.getElementById('gps-lon').textContent = data.lon.toFixed(6);
+          document.getElementById('gps-sats').textContent = data.sats || '--';
+          document.getElementById('gps-precision').textContent = '±5m';
+          
+          updateStatus('gps', 'GPS: Señal válida', 'connected');
+          updateRobotPosition(data.lat, data.lon);
+        } else {
+          updateStatus('gps', 'GPS: Sin señal', 'warning');
+        }
+      } catch (error) {
+        // Si no es JSON, intentar parsear formato antiguo
+        const parts = payload.split(',');
+        if (parts.length >= 2) {
+          const lat = parseFloat(parts[0]);
+          const lon = parseFloat(parts[1]);
+          
+          if (!isNaN(lat) && !isNaN(lon)) {
+            document.getElementById('gps-lat').textContent = lat.toFixed(6);
+            document.getElementById('gps-lon').textContent = lon.toFixed(6);
+            updateRobotPosition(lat, lon);
+            updateStatus('gps', 'GPS: Señal válida', 'connected');
+          }
+        }
+      }
+    }
+
+    function handleGeocercaMessage(payload) {
+      const geocercaStatus = document.getElementById('geocerca-status');
+      
+      if (payload.includes('DENTRO')) {
+        geocercaStatus.textContent = 'Geocerca: ✅ Dentro';
+        geocercaStatus.style.color = '#28a745';
+      } else if (payload.includes('FUERA')) {
+        geocercaStatus.textContent = 'Geocerca: ⚠️ Fuera';
+        geocercaStatus.style.color = '#dc3545';
+        addLog('¡ALERTA! Robot fuera de geocerca', 'error');
+      }
+    }
+
+    function handleTaskQueueMessage(payload) {
+      try {
+        taskQueue = JSON.parse(payload);
+        updateTaskQueueUI();
+      } catch (error) {
+        addLog('Error parseando cola de tareas: ' + error.message, 'error');
+      }
+    }
+
+    function updateTaskQueueUI() {
+      const queueDiv = document.getElementById('task-queue');
+      
+      if (taskQueue.length === 0) {
+        queueDiv.innerHTML = '<p style="text-align: center; color: #6c757d;">No hay tareas pendientes</p>';
+        document.getElementById('stat-tareas').textContent = tareasCompletadas;
+        return;
+      }
+
+      let html = '';
+      taskQueue.forEach((task, index) => {
+        const isActive = index === 0;
+        const className = isActive ? 'task-item active' : 'task-item';
+        const status = isActive ? 'En progreso...' : 'En cola';
+        
+        html += `
+          <div class="${className}">
+            <span class="task-name">${task.nombre || task}</span>
+            <span class="task-status">${status}</span>
+          </div>
+        `;
+      });
+
+      queueDiv.innerHTML = html;
+      document.getElementById('stat-tareas').textContent = tareasCompletadas;
+    }
+
+    // ====================================
+    // FUNCIONES DE CONTROL
+    // ====================================
+    function enviarComando(tipo, comando) {
+      if (!mqttClient || !mqttClient.connected) {
+        addLog('Error: No hay conexión MQTT', 'error');
+        return;
+      }
+
+      let topic = tipo === 'led' ? TOPICS.led : TOPICS.motor;
+      
+      mqttClient.publish(topic, comando);
+      addLog(`Comando enviado: ${comando}`, 'success');
+      
+      comandosEnviados++;
+      document.getElementById('stat-comandos').textContent = comandosEnviados;
+    }
+
+    function navegarA(destino) {
+      if (!mqttClient || !mqttClient.connected) {
+        addLog('Error: No hay conexión MQTT', 'error');
+        return;
+      }
+
+      const comando = `NAVEGAR_${destino}`;
+      mqttClient.publish(TOPICS.navigation, comando);
+      
+      setDestination(destino);
+      addLog(`Navegando a: ${DESTINOS[destino].nombre}`, 'success');
+      
+      comandosEnviados++;
+      document.getElementById('stat-comandos').textContent = comandosEnviados;
+    }
+
+    function cancelarRuta() {
+      if (!mqttClient || !mqttClient.connected) {
+        addLog('Error: No hay conexión MQTT', 'error');
+        return;
+      }
+
+      mqttClient.publish(TOPICS.cancelRoute, 'CANCEL_ALL');
+      addLog('Ruta cancelada', 'warning');
+      
+      // Limpiar destino y línea
+      if (destinoMarker) {
+        map.removeLayer(destinoMarker);
+        destinoMarker = null;
+      }
+      if (routeLine) {
+        map.removeLayer(routeLine);
+        routeLine = null;
+      }
+      
+      currentDestination = null;
+      taskQueue = [];
+      updateTaskQueueUI();
+      
+      document.getElementById('stat-distancia').textContent = '0 m';
+    }
+
+    // ====================================
+    // UTILIDADES
+    // ====================================
+    function updateStatus(tipo, mensaje, estado) {
+      const indicator = document.getElementById(`${tipo}-indicator`);
+      const status = document.getElementById(`${tipo}-status`);
+      
+      if (indicator) {
+        indicator.className = 'status-indicator ' + estado;
+      }
+      
+      if (status) {
+        status.textContent = mensaje;
+      }
+    }
+
+    function addLog(mensaje, tipo = 'info') {
+      const console = document.getElementById('console');
+      const timestamp = new Date().toLocaleTimeString();
+      
+      const line = document.createElement('div');
+      line.className = `console-line ${tipo}`;
+      line.innerHTML = `<span class="timestamp">[${timestamp}]</span>${mensaje}`;
+      
+      console.appendChild(line);
+      console.scrollTop = console.scrollHeight;
+
+      // Limitar a 100 líneas
+      while (console.children.length > 100) {
+        console.removeChild(console.firstChild);
+      }
+    }
+
+    function initTimers() {
+      // Actualizar tiempo de operación cada segundo
+      setInterval(() => {
+        const elapsed = Math.floor((Date.now() - tiempoInicio) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        document.getElementById('stat-tiempo').textContent = 
+          `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    // ====================================
+    // MANEJO DE ERRORES GLOBALES
+    // ====================================
+    window.onerror = function(msg, url, line, col, error) {
+      addLog(`Error: ${msg} (línea ${line})`, 'error');
+      return false;
+    };
+  </script>
 </body>
 </html>
